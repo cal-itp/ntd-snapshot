@@ -9,6 +9,7 @@ import google.auth
 import pandas as pd
 import pandas_gbq
 from google.cloud import bigquery
+
 from snapshot_utils import geography_utils
 
 credentials, project = google.auth.default()
@@ -148,7 +149,8 @@ def bq_faster_download(sql_query: str, **kwargs) -> pd.DataFrame:
 
     df = query_job.result().to_dataframe()
 
-    df = df.pipe(fix_date_columns).pipe(exclude_interval_columns)
+    # df = df.pipe(fix_date_columns).pipe(exclude_interval_columns)
+    df = df.pipe(exclude_interval_columns)
 
     return df
 
