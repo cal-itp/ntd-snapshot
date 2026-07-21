@@ -1,7 +1,11 @@
 from pathlib import Path
 
 from calitp_portfolio.models import Site, load_site
-from calitp_portfolio.mutations import generate_parts_flat, generate_parts_grouped, generate_parts_sections
+from calitp_portfolio.mutations import (
+    generate_parts_flat,
+    generate_parts_grouped,
+    generate_parts_sections,
+)
 
 SITE_FIXTURES = Path(__file__).parent / "fixtures" / "sites"
 
@@ -38,7 +42,9 @@ def test_generate_parts_flat_round_trips_through_yaml(tmp_path):
 
 def test_generate_parts_flat_coerces_non_string_values():
     base = load_site(SITE_FIXTURES / "_param_analyses_test.yml")
-    result = generate_parts_flat(_strip_parts(base), param_key="district", values=[1, 2, 3])
+    result = generate_parts_flat(
+        _strip_parts(base), param_key="district", values=[1, 2, 3]
+    )
     assert [c.params for c in result.parts[0].chapters] == [
         {"district": "1"},
         {"district": "2"},
@@ -48,7 +54,9 @@ def test_generate_parts_flat_coerces_non_string_values():
 
 def test_generate_parts_flat_preserves_duplicates_and_order():
     base = load_site(SITE_FIXTURES / "_param_analyses_test.yml")
-    result = generate_parts_flat(_strip_parts(base), param_key="x", values=["b", "a", "b"])
+    result = generate_parts_flat(
+        _strip_parts(base), param_key="x", values=["b", "a", "b"]
+    )
     assert [c.params["x"] for c in result.parts[0].chapters] == ["b", "a", "b"]
 
 
@@ -132,7 +140,10 @@ def test_generate_parts_grouped_coerces_non_string_values():
         param_key="district",
         groups={"Group A": [1, 2], "Group B": [3]},
     )
-    assert [c.params for c in result.parts[0].chapters] == [{"district": "1"}, {"district": "2"}]
+    assert [c.params for c in result.parts[0].chapters] == [
+        {"district": "1"},
+        {"district": "2"},
+    ]
     assert [c.params for c in result.parts[1].chapters] == [{"district": "3"}]
 
 

@@ -93,13 +93,19 @@ def preflight_axe() -> None:
         raise typer.Exit(2)
 
 
-def _resolve_scan_target(yml_path: Optional[Path], html_dir: Optional[Path]) -> Tuple[Path, Optional[str]]:
+def _resolve_scan_target(
+    yml_path: Optional[Path], html_dir: Optional[Path]
+) -> Tuple[Path, Optional[str]]:
     """Return `(html_dir_to_scan, url_prefix)`.
 
     `url_prefix` is the BASE_URL prefix the site is served under (used by the
     http-serve mode); `None` in `--html` mode, where we don't know the prefix."""
     if (yml_path is None) == (html_dir is None):
-        typer.secho("error: pass exactly one of <site.yml> or --html <dir>", fg=typer.colors.RED, err=True)
+        typer.secho(
+            "error: pass exactly one of <site.yml> or --html <dir>",
+            fg=typer.colors.RED,
+            err=True,
+        )
         raise typer.Exit(2)
     if html_dir is not None:
         return html_dir.resolve(), None
@@ -160,7 +166,11 @@ def _run_axe(urls: List[str], tags: List[str], load_delay_ms: int = 0) -> List[d
     # locate the array start rather than assuming stdout begins with "[".
     start = result.stdout.find("[")
     if start == -1:
-        typer.secho(f"axe CLI failed:\n{result.stderr or result.stdout}", fg=typer.colors.RED, err=True)
+        typer.secho(
+            f"axe CLI failed:\n{result.stderr or result.stdout}",
+            fg=typer.colors.RED,
+            err=True,
+        )
         raise typer.Exit(2)
     return json.loads(result.stdout[start:])
 
@@ -207,7 +217,9 @@ def _collect(raw_results: List[dict], impacts: set, dedupe: bool) -> List[Violat
 
 def _print_report(violations: List[Violation], dedupe: bool) -> None:
     if not violations:
-        typer.secho("✅ no violations at the requested impact levels", fg=typer.colors.GREEN)
+        typer.secho(
+            "✅ no violations at the requested impact levels", fg=typer.colors.GREEN
+        )
         return
     for v in violations:
         emoji = IMPACT_DISPLAY.get(v.impact, "?")
@@ -240,7 +252,9 @@ def run(
         preflight_axe()
     scan_root, site_prefix = _resolve_scan_target(yml_path, html_dir)
     if not scan_root.is_dir():
-        typer.secho(f"error: not a directory: {scan_root}", fg=typer.colors.RED, err=True)
+        typer.secho(
+            f"error: not a directory: {scan_root}", fg=typer.colors.RED, err=True
+        )
         raise typer.Exit(2)
 
     # Serve over http by default when scanning a site via its yml (its charts
@@ -253,7 +267,11 @@ def run(
 
     html_files = sorted(scan_root.rglob("*.html"))
     if serve:
-        html_files = [f for f in html_files if f.relative_to(scan_root).parts[:1] != (FRAGMENT_DIR,)]
+        html_files = [
+            f
+            for f in html_files
+            if f.relative_to(scan_root).parts[:1] != (FRAGMENT_DIR,)
+        ]
 
     if not html_files:
         typer.secho(f"no .html files under {scan_root}", fg=typer.colors.YELLOW)
@@ -270,12 +288,17 @@ def run(
             urls = [f"{base}/{f.relative_to(scan_root).as_posix()}" for f in html_files]
             raw = _run_axe(urls, tags, load_delay_ms)
     else:
-        typer.secho(f"scanning {len(html_files)} files under {scan_root}", fg=typer.colors.GREEN)
+        typer.secho(
+            f"scanning {len(html_files)} files under {scan_root}", fg=typer.colors.GREEN
+        )
         urls = [f.resolve().as_uri() for f in html_files]
         raw = _run_axe(urls, tags, load_delay_ms)
 
     if report_path is not None:
-        trimmed = [{k: v for k, v in page.items() if k not in REPORT_DROP_CATEGORIES} for page in raw]
+        trimmed = [
+            {k: v for k, v in page.items() if k not in REPORT_DROP_CATEGORIES}
+            for page in raw
+        ]
         report_path.write_text(json.dumps(trimmed, indent=2))
         typer.secho(
             f"wrote axe report (violations + incomplete) to {report_path}",

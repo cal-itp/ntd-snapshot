@@ -2,9 +2,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import nbformat
-from papermill.engines import NBClientEngine
-
 from calitp_portfolio.engine import EngineWithParameterizedMarkdown
+from papermill.engines import NBClientEngine
 
 NOTEBOOKS = Path(__file__).parent / "fixtures" / "portfolio"
 
@@ -26,7 +25,9 @@ def _run_engine(nb_man, params, no_stderr=True, mocker=None):
 def test_every_code_cell_gets_remove_input_tag(mocker):
     nb_man = _load_nb_man("notebook_with_params_1.ipynb")
     # cell 2 uses %%capture_parameters which reads outputs[0]["text"]; seed it so we don't crash there
-    nb_man.nb.cells[2].outputs = [{"output_type": "stream", "name": "stdout", "text": '{"greetings": "Foo"}'}]
+    nb_man.nb.cells[2].outputs = [
+        {"output_type": "stream", "name": "stdout", "text": '{"greetings": "Foo"}'}
+    ]
 
     _run_engine(nb_man, params={"greetings": "Foo"}, mocker=mocker)
 
@@ -38,7 +39,9 @@ def test_every_code_cell_gets_remove_input_tag(mocker):
 
 def test_markdown_cells_get_param_substituted(mocker):
     nb_man = _load_nb_man("notebook_with_params_1.ipynb")
-    nb_man.nb.cells[2].outputs = [{"output_type": "stream", "name": "stdout", "text": '{"greetings": "Foo"}'}]
+    nb_man.nb.cells[2].outputs = [
+        {"output_type": "stream", "name": "stdout", "text": '{"greetings": "Foo"}'}
+    ]
 
     _run_engine(nb_man, params={"greetings": "Foo"}, mocker=mocker)
 
@@ -49,7 +52,13 @@ def test_markdown_cells_get_param_substituted(mocker):
 def test_capture_parameters_cell_updates_params_for_later_markdown(mocker):
     """%%capture_parameters output gets merged into params *before* later markdown cells render."""
     nb_man = _load_nb_man("notebook_with_params_1.ipynb")
-    nb_man.nb.cells[2].outputs = [{"output_type": "stream", "name": "stdout", "text": '{"greetings": "Captured!"}'}]
+    nb_man.nb.cells[2].outputs = [
+        {
+            "output_type": "stream",
+            "name": "stdout",
+            "text": '{"greetings": "Captured!"}',
+        }
+    ]
 
     _run_engine(nb_man, params={"greetings": "Original"}, mocker=mocker)
 
@@ -59,9 +68,13 @@ def test_capture_parameters_cell_updates_params_for_later_markdown(mocker):
 
 def test_capture_clears_outputs(mocker):
     nb_man = _load_nb_man("notebook_with_params_1.ipynb")
-    nb_man.nb.cells[2].outputs = [{"output_type": "stream", "name": "stdout", "text": '{"greetings": "Foo"}'}]
+    nb_man.nb.cells[2].outputs = [
+        {"output_type": "stream", "name": "stdout", "text": '{"greetings": "Foo"}'}
+    ]
     # cell 1 has %%capture; seed it with an output that should get cleared
-    nb_man.nb.cells[1].outputs = [{"output_type": "stream", "name": "stdout", "text": "should be cleared"}]
+    nb_man.nb.cells[1].outputs = [
+        {"output_type": "stream", "name": "stdout", "text": "should be cleared"}
+    ]
 
     _run_engine(nb_man, params={"greetings": "Foo"}, mocker=mocker)
 
@@ -70,7 +83,9 @@ def test_capture_clears_outputs(mocker):
 
 def test_no_stderr_strips_stderr_outputs(mocker):
     nb_man = _load_nb_man("notebook_with_params_1.ipynb")
-    nb_man.nb.cells[2].outputs = [{"output_type": "stream", "name": "stdout", "text": '{"greetings": "Foo"}'}]
+    nb_man.nb.cells[2].outputs = [
+        {"output_type": "stream", "name": "stdout", "text": '{"greetings": "Foo"}'}
+    ]
     # cell 0 is a plain code cell — mixed stdout + stderr
     nb_man.nb.cells[0].outputs = [
         {"output_type": "stream", "name": "stdout", "text": "keep me"},
@@ -86,7 +101,9 @@ def test_no_stderr_strips_stderr_outputs(mocker):
 
 def test_no_stderr_false_keeps_stderr(mocker):
     nb_man = _load_nb_man("notebook_with_params_1.ipynb")
-    nb_man.nb.cells[2].outputs = [{"output_type": "stream", "name": "stdout", "text": '{"greetings": "Foo"}'}]
+    nb_man.nb.cells[2].outputs = [
+        {"output_type": "stream", "name": "stdout", "text": '{"greetings": "Foo"}'}
+    ]
     nb_man.nb.cells[0].outputs = [
         {"output_type": "stream", "name": "stderr", "text": "still here"},
     ]
@@ -99,7 +116,9 @@ def test_no_stderr_false_keeps_stderr(mocker):
 def test_resolver_typeerror_is_swallowed(mocker):
     """district_name(**params) raises TypeError if params lacks 'district'; the engine should keep going."""
     nb_man = _load_nb_man("notebook_with_params_1.ipynb")
-    nb_man.nb.cells[2].outputs = [{"output_type": "stream", "name": "stdout", "text": '{"greetings": "Foo"}'}]
+    nb_man.nb.cells[2].outputs = [
+        {"output_type": "stream", "name": "stdout", "text": '{"greetings": "Foo"}'}
+    ]
 
     # params has no "district" — district_name will TypeError; engine must not propagate it
     _run_engine(nb_man, params={"greetings": "Foo"}, mocker=mocker)
@@ -113,7 +132,9 @@ def test_resolver_fires_when_params_match():
     from calitp_portfolio.engine import district_name
 
     assert district_name(district=3) == "Three"
-    assert district_name(district=12) == "12"  # humanize.apnumber returns digits for >10
+    assert (
+        district_name(district=12) == "12"
+    )  # humanize.apnumber returns digits for >10
 
 
 def test_capture_parameters_cell_with_no_outputs_does_not_crash(mocker):
@@ -130,7 +151,9 @@ def test_capture_parameters_cell_with_no_outputs_does_not_crash(mocker):
 def test_capture_parameters_cell_with_malformed_output_does_not_crash(mocker):
     """%%capture_parameters cell doesn't contain parseable JSON."""
     nb_man = _load_nb_man("notebook_with_params_1.ipynb")
-    nb_man.nb.cells[2].outputs = [{"output_type": "stream", "name": "stdout", "text": "not valid json"}]
+    nb_man.nb.cells[2].outputs = [
+        {"output_type": "stream", "name": "stdout", "text": "not valid json"}
+    ]
 
     _run_engine(nb_man, params={"greetings": "Original"}, mocker=mocker)
 

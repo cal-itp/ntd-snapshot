@@ -2,10 +2,9 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from typer.testing import CliRunner
-
 from calitp_portfolio.cli import app
 from calitp_portfolio.deployer import parse_gs_url
+from typer.testing import CliRunner
 
 runner = CliRunner()
 
@@ -175,7 +174,9 @@ def test_deploy_reuploads_non_hashed_files_even_on_name_match(mocker, tmp_path):
     (html_dir / "index.html").write_text("<html>new</html>")
 
     mocker.patch("calitp_portfolio.cli.auth.is_valid", return_value=True)
-    _, bucket = _mock_storage(mocker, existing_blobs=["_basic_analyses_test/index.html"])
+    _, bucket = _mock_storage(
+        mocker, existing_blobs=["_basic_analyses_test/index.html"]
+    )
 
     result = runner.invoke(app, ["deploy", str(site_yml)])
 

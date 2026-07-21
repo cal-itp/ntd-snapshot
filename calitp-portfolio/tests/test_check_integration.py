@@ -15,9 +15,8 @@ Catches regressions in:
 import json
 from pathlib import Path
 
-from typer.testing import CliRunner
-
 from calitp_portfolio.cli import app
+from typer.testing import CliRunner
 
 runner = CliRunner()
 FIXTURES = Path(__file__).parent / "fixtures" / "built_html"

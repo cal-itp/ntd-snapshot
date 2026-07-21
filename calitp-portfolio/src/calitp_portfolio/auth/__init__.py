@@ -21,5 +21,11 @@ def is_valid() -> bool:
 
 def login() -> int:
     """Run `gcloud auth application-default login` with the bundled Cal-ITP config. Returns gcloud's exit code."""
-    cmd = ["gcloud", "auth", "application-default", "login", f"--login-config={LOGIN_CONFIG}"]
+    cmd = [
+        "gcloud",
+        "auth",
+        "application-default",
+        "login",
+        f"--login-config={LOGIN_CONFIG}",
+    ]
     return subprocess.run(cmd).returncode

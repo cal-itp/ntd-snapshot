@@ -1,10 +1,9 @@
 import json
 from pathlib import Path
 
-from typer.testing import CliRunner
-
 from calitp_portfolio.cli import app
 from calitp_portfolio.models import GOOGLE_ANALYTICS_TAG_ID
+from typer.testing import CliRunner
 
 runner = CliRunner()
 
@@ -20,7 +19,9 @@ def _stub_jupyter_book_build(mocker):
         (html_dir / "index.html").write_text("<html><title>built</title></html>")
         log_file.write("[stub] jupyter book build --html --ci\n")
 
-    return mocker.patch("calitp_portfolio.builder._run_subprocess_tee", side_effect=fake_run)
+    return mocker.patch(
+        "calitp_portfolio.builder._run_subprocess_tee", side_effect=fake_run
+    )
 
 
 def test_build_aborts_when_adc_unauthorized(tmp_path, mocker):
@@ -44,7 +45,9 @@ def test_build_produces_artifacts(tmp_path, mocker):
     output_dir = tmp_path / "build"
     fake_run = _stub_jupyter_book_build(mocker)
 
-    result = runner.invoke(app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"])
+    result = runner.invoke(
+        app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"]
+    )
 
     assert result.exit_code == 0, result.stdout
     assert (output_dir / "myst.yml").exists()
@@ -64,7 +67,9 @@ def test_build_myst_yml_includes_toc_and_title(tmp_path, mocker):
     output_dir = tmp_path / "build"
     _stub_jupyter_book_build(mocker)
 
-    runner.invoke(app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"])
+    runner.invoke(
+        app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"]
+    )
 
     myst = (output_dir / "myst.yml").read_text()
     assert "title: Basic Analyses Test" in myst
@@ -77,9 +82,14 @@ def test_build_myst_yml_includes_google_analytics_tag(tmp_path, mocker):
     output_dir = tmp_path / "build"
     _stub_jupyter_book_build(mocker)
 
-    runner.invoke(app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"])
+    runner.invoke(
+        app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"]
+    )
 
-    assert f"analytics_google: '{GOOGLE_ANALYTICS_TAG_ID}'" in (output_dir / "myst.yml").read_text()
+    assert (
+        f"analytics_google: '{GOOGLE_ANALYTICS_TAG_ID}'"
+        in (output_dir / "myst.yml").read_text()
+    )
 
 
 def test_build_hide_title_block_renders_in_myst_yml(tmp_path, mocker):
@@ -88,11 +98,23 @@ def test_build_hide_title_block_renders_in_myst_yml(tmp_path, mocker):
     _stub_jupyter_book_build(mocker)
 
     on_dir = tmp_path / "on"
-    runner.invoke(app, ["build", str(yml), "--output-dir", str(on_dir), "--no-execute", "--hide-title-block"])
+    runner.invoke(
+        app,
+        [
+            "build",
+            str(yml),
+            "--output-dir",
+            str(on_dir),
+            "--no-execute",
+            "--hide-title-block",
+        ],
+    )
     assert "hide_title_block: True" in (on_dir / "myst.yml").read_text()
 
     off_dir = tmp_path / "off"
-    runner.invoke(app, ["build", str(yml), "--output-dir", str(off_dir), "--no-execute"])
+    runner.invoke(
+        app, ["build", str(yml), "--output-dir", str(off_dir), "--no-execute"]
+    )
     assert "hide_title_block: False" in (off_dir / "myst.yml").read_text()
 
 
@@ -101,7 +123,9 @@ def test_build_manifest_records_basic_metadata(tmp_path, mocker):
     output_dir = tmp_path / "build"
     _stub_jupyter_book_build(mocker)
 
-    result = runner.invoke(app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"])
+    result = runner.invoke(
+        app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"]
+    )
 
     assert result.exit_code == 0, result.stdout
     manifest = json.loads((output_dir / "build.json").read_text())
@@ -120,7 +144,9 @@ def test_build_bundles_template_assets(tmp_path, mocker):
     output_dir = tmp_path / "build"
     _stub_jupyter_book_build(mocker)
 
-    result = runner.invoke(app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"])
+    result = runner.invoke(
+        app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"]
+    )
 
     assert result.exit_code == 0, result.stdout
     bundle = output_dir / "_templates"
@@ -139,7 +165,9 @@ def test_build_writes_section_readme_for_section_chapters(tmp_path, mocker):
     output_dir = tmp_path / "build"
     _stub_jupyter_book_build(mocker)
 
-    result = runner.invoke(app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"])
+    result = runner.invoke(
+        app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"]
+    )
 
     assert result.exit_code == 0, result.stdout
     daily = output_dir / "day_or_night_01-day.md"
@@ -154,7 +182,9 @@ def test_build_copies_readme_with_its_actual_filename(tmp_path, mocker):
     output_dir = tmp_path / "build"
     _stub_jupyter_book_build(mocker)
 
-    result = runner.invoke(app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"])
+    result = runner.invoke(
+        app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"]
+    )
 
     assert result.exit_code == 0, result.stdout
     assert (output_dir / "README_TP.md").exists()
@@ -167,7 +197,9 @@ def test_build_works_for_readme_only_site(tmp_path, mocker):
     output_dir = tmp_path / "build"
     _stub_jupyter_book_build(mocker)
 
-    result = runner.invoke(app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"])
+    result = runner.invoke(
+        app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"]
+    )
 
     assert result.exit_code == 0, result.stdout
     assert (output_dir / "myst.yml").exists()
@@ -185,7 +217,9 @@ def test_build_passes_base_url_env_derived_from_deploy_staging(tmp_path, mocker)
     output_dir = tmp_path / "build"
     fake_run = _stub_jupyter_book_build(mocker)
 
-    runner.invoke(app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"])
+    runner.invoke(
+        app, ["build", str(yml), "--output-dir", str(output_dir), "--no-execute"]
+    )
 
     env = fake_run.call_args.kwargs["env"]
     assert env["BASE_URL"] == "/_readme_only_analyses_test"
@@ -198,7 +232,10 @@ def test_build_cli_output_dir_overrides_yml_output_dir(tmp_path, mocker):
     yml.write_text(base + "output_dir: from-yml\n")
     _stub_jupyter_book_build(mocker)
 
-    result = runner.invoke(app, ["build", str(yml), "--no-execute", "--output-dir", str(tmp_path / "from-cli")])
+    result = runner.invoke(
+        app,
+        ["build", str(yml), "--no-execute", "--output-dir", str(tmp_path / "from-cli")],
+    )
 
     assert result.exit_code == 0, result.stdout
     assert (tmp_path / "from-cli" / "myst.yml").exists()
@@ -215,7 +252,15 @@ def test_build_only_filters_to_matching_chapter(tmp_path, mocker):
     only = "00__notebook_with_params_2__greetings_hi-so-happy-to-see-you-here"
     result = runner.invoke(
         app,
-        ["build", str(yml), "--output-dir", str(output_dir), "--no-execute", "--only", only],
+        [
+            "build",
+            str(yml),
+            "--output-dir",
+            str(output_dir),
+            "--no-execute",
+            "--only",
+            only,
+        ],
     )
 
     assert result.exit_code == 0, result.stdout
@@ -231,7 +276,15 @@ def test_build_limit_caps_chapter_count(tmp_path, mocker):
 
     result = runner.invoke(
         app,
-        ["build", str(yml), "--output-dir", str(output_dir), "--no-execute", "--limit", "1"],
+        [
+            "build",
+            str(yml),
+            "--output-dir",
+            str(output_dir),
+            "--no-execute",
+            "--limit",
+            "1",
+        ],
     )
 
     assert result.exit_code == 0, result.stdout
@@ -240,14 +293,24 @@ def test_build_limit_caps_chapter_count(tmp_path, mocker):
 
 def test_build_limit_spans_parts(tmp_path, mocker):
     """`--limit N` counts across parts, not within each part."""
-    yml = FIXTURES / "sites" / "_group_and_params_analyses_test.yml"  # 4 chapters in part 1, 2 in part 2
+    yml = (
+        FIXTURES / "sites" / "_group_and_params_analyses_test.yml"
+    )  # 4 chapters in part 1, 2 in part 2
     output_dir = tmp_path / "build"
     _stub_jupyter_book_build(mocker)
     generate = mocker.patch("calitp_portfolio.models.Chapter.generate", return_value=[])
 
     result = runner.invoke(
         app,
-        ["build", str(yml), "--output-dir", str(output_dir), "--no-execute", "--limit", "5"],
+        [
+            "build",
+            str(yml),
+            "--output-dir",
+            str(output_dir),
+            "--no-execute",
+            "--limit",
+            "5",
+        ],
     )
 
     assert result.exit_code == 0, result.stdout
@@ -300,7 +363,14 @@ def test_build_readme_only_and_toc_only_are_mutually_exclusive(tmp_path):
     yml = FIXTURES / "sites" / "_param_analyses_test.yml"
     result = runner.invoke(
         app,
-        ["build", str(yml), "--output-dir", str(tmp_path / "b"), "--readme-only", "--toc-only"],
+        [
+            "build",
+            str(yml),
+            "--output-dir",
+            str(tmp_path / "b"),
+            "--readme-only",
+            "--toc-only",
+        ],
     )
     assert result.exit_code != 0
     assert "mutually exclusive" in result.stdout.lower()
@@ -310,7 +380,15 @@ def test_build_readme_only_rejects_only_flag(tmp_path):
     yml = FIXTURES / "sites" / "_param_analyses_test.yml"
     result = runner.invoke(
         app,
-        ["build", str(yml), "--output-dir", str(tmp_path / "b"), "--readme-only", "--only", "x"],
+        [
+            "build",
+            str(yml),
+            "--output-dir",
+            str(tmp_path / "b"),
+            "--readme-only",
+            "--only",
+            "x",
+        ],
     )
     assert result.exit_code != 0
     assert "--readme-only" in result.stdout
@@ -320,7 +398,15 @@ def test_build_toc_only_rejects_limit_flag(tmp_path):
     yml = FIXTURES / "sites" / "_param_analyses_test.yml"
     result = runner.invoke(
         app,
-        ["build", str(yml), "--output-dir", str(tmp_path / "b"), "--toc-only", "--limit", "1"],
+        [
+            "build",
+            str(yml),
+            "--output-dir",
+            str(tmp_path / "b"),
+            "--toc-only",
+            "--limit",
+            "1",
+        ],
     )
     assert result.exit_code != 0
     assert "--toc-only" in result.stdout
@@ -333,7 +419,15 @@ def test_build_only_errors_on_unknown_slug(tmp_path, mocker):
 
     result = runner.invoke(
         app,
-        ["build", str(yml), "--output-dir", str(output_dir), "--no-execute", "--only", "nonsense-slug"],
+        [
+            "build",
+            str(yml),
+            "--output-dir",
+            str(output_dir),
+            "--no-execute",
+            "--only",
+            "nonsense-slug",
+        ],
     )
 
     assert result.exit_code != 0
@@ -350,7 +444,12 @@ def test_build_exits_nonzero_when_papermill_errors(tmp_path, mocker):
     from papermill import PapermillExecutionError
 
     fake_error = PapermillExecutionError(
-        cell_index=0, exec_count=1, source="boom", ename="X", evalue="y", traceback=["t"]
+        cell_index=0,
+        exec_count=1,
+        source="boom",
+        ename="X",
+        evalue="y",
+        traceback=["t"],
     )
     mocker.patch(
         "calitp_portfolio.models.Chapter.generate",

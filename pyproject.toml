@@ -53,3 +53,16 @@ dev = [
 [tool.uv.sources]
 snapshot-utils = { workspace = true }
 calitp-portfolio = { workspace = true }
+
+[tool.ruff]
+line-length = 88  # Sets the max line length (default is 88, same as Black)
+target-version = "py311"  # Specifies the Python version (py312 for Python 3.12)
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false

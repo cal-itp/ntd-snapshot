@@ -1,8 +1,7 @@
 from importlib.resources import files
 
-from typer.testing import CliRunner
-
 from calitp_portfolio.cli import app
+from typer.testing import CliRunner
 
 runner = CliRunner()
 

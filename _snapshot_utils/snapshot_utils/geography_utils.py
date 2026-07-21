@@ -3,10 +3,9 @@ Utility functions for geospatial data.
 Some functions for dealing with census tract or other geographic unit dfs.
 """
 
-from typing import Literal, Union
+from typing import Literal
 
 import geopandas as gpd  # type: ignore
-import numpy as np
 import pandas as pd
 import shapely  # type: ignore
 
@@ -50,7 +49,9 @@ def create_point_geometry(
     crs: str, coordinate reference system for point geometry
     """
     # Default CRS for stop_lon, stop_lat is WGS84
-    df = df.assign(geometry=gpd.points_from_xy(df[longitude_col], df[latitude_col], crs=WGS84))
+    df = df.assign(
+        geometry=gpd.points_from_xy(df[longitude_col], df[latitude_col], crs=WGS84)
+    )
 
     # ALlow projection to different CRS
     gdf = gpd.GeoDataFrame(df).to_crs(crs)
@@ -58,7 +59,9 @@ def create_point_geometry(
     return gdf
 
 
-def convert_to_gdf(df: pd.DataFrame, geom_col: str, geom_type: Literal["point", "line"]) -> gpd.GeoDataFrame:
+def convert_to_gdf(
+    df: pd.DataFrame, geom_col: str, geom_type: Literal["point", "line"]
+) -> gpd.GeoDataFrame:
     """
     For stops, we want to make pt_geom a point.
     For vp_path and shapes, we want to make pt_array a linestring.
@@ -69,6 +72,8 @@ def convert_to_gdf(df: pd.DataFrame, geom_col: str, geom_type: Literal["point", 
     elif geom_type == "line":
         df["geometry"] = df[geom_col].apply(make_linestring)
 
-    gdf = gpd.GeoDataFrame(df.drop(columns=geom_col), geometry="geometry", crs="EPSG:4326")
+    gdf = gpd.GeoDataFrame(
+        df.drop(columns=geom_col), geometry="geometry", crs="EPSG:4326"
+    )
 
     return gdf

@@ -1,6 +1,6 @@
-from . import (  
+from . import (
     bq_utils,
-	geography_utils,
+    geography_utils,
     publish_utils,
     sql,
     utils,
@@ -8,10 +8,8 @@ from . import (
 
 __all__ = [
     "bq_utils",
-	"geography_utils",
+    "geography_utils",
     "publish_utils",
     "sql",
     "utils",
 ]
-
-

@@ -3,7 +3,9 @@ import json
 import humanize
 from papermill.engines import NBClientEngine, papermill_engines
 
-from calitp_portfolio import magics  # noqa: F401 -- exposes %%capture_parameters for notebook-side imports
+from calitp_portfolio import (
+    magics,  # noqa: F401 -- exposes %%capture_parameters for notebook-side imports
+)
 
 
 def district_name(district, **_):
@@ -33,7 +35,6 @@ class EngineWithParameterizedMarkdown(NBClientEngine):
                 pass
 
         for cell in nb_man.nb.cells:
-
             # display() calls for markdown break jupyterbook/sphinx
             # https://github.com/executablebooks/jupyter-book/issues/1610
             # so we have to manually parameterize headers in markdown cells; for example, "District {district}" in a
@@ -57,7 +58,9 @@ class EngineWithParameterizedMarkdown(NBClientEngine):
 
                 if no_stderr:
                     cell.outputs = [
-                        output for output in cell.outputs if "name" not in output.keys() or output["name"] != "stderr"
+                        output
+                        for output in cell.outputs
+                        if "name" not in output.keys() or output["name"] != "stderr"
                     ]
 
 

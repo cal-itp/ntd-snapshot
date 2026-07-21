@@ -14,14 +14,16 @@ def to_snakecase(df: pd.DataFrame) -> pd.DataFrame:
     """
 
     return df.rename(
-        columns=lambda s: s.lower()
-        .replace(" ", "_")
-        .replace("&", "_")
-        .replace("(", "_")
-        .replace(")", "_")
-        .replace(".", "_")
-        .replace("-", "_")
-        .replace("/", "_")
-        .replace('"', "")
-        .replace("'", "")
+        columns=lambda s: (
+            s.lower()
+            .replace(" ", "_")
+            .replace("&", "_")
+            .replace("(", "_")
+            .replace(")", "_")
+            .replace(".", "_")
+            .replace("-", "_")
+            .replace("/", "_")
+            .replace('"', "")
+            .replace("'", "")
+        )
     ).rename(columns=lambda s: "_%s" % s if s[0].isdigit() else s)

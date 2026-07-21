@@ -47,7 +47,9 @@ def _bundle_template_assets(output_dir: Path) -> None:
     shutil.copy(TEMPLATES_DIR / "custom.css", dest / "custom.css")
 
 
-def _write_manifest(site: Site, yml_path: Path, output_dir: Path, errors_count: int) -> None:
+def _write_manifest(
+    site: Site, yml_path: Path, output_dir: Path, errors_count: int
+) -> None:
     manifest = {
         "tool_version": importlib.metadata.version("calitp-portfolio"),
         "timestamp_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -158,12 +160,18 @@ def build_site(
                     site.parts = []
 
                 if not toc_only:
-                    typer.echo(f"copying {site.readme.name} from {site.directory} to {output_dir}")
+                    typer.echo(
+                        f"copying {site.readme.name} from {site.directory} to {output_dir}"
+                    )
                     shutil.copy(site.readme, output_dir / site.readme.name)
 
                 myst_path = output_dir / "myst.yml"
-                typer.secho(f"writing config and toc to {myst_path}", fg=typer.colors.GREEN)
-                myst_path.write_text(_render_myst_yml(site, hide_title_block=hide_title_block))
+                typer.secho(
+                    f"writing config and toc to {myst_path}", fg=typer.colors.GREEN
+                )
+                myst_path.write_text(
+                    _render_myst_yml(site, hide_title_block=hide_title_block)
+                )
 
                 _bundle_template_assets(output_dir)
 
@@ -197,12 +205,20 @@ def build_site(
                 _write_manifest(site, yml_path, output_dir, errors_count=len(errors))
 
                 if errors:
-                    typer.secho(f"\n{len(errors)} papermill error(s) encountered during build:", fg=typer.colors.RED)
+                    typer.secho(
+                        f"\n{len(errors)} papermill error(s) encountered during build:",
+                        fg=typer.colors.RED,
+                    )
                     for e in errors:
-                        typer.secho(f"  - cell In[{e.exec_count}]: {e.ename}: {e.evalue}", fg=typer.colors.RED)
+                        typer.secho(
+                            f"  - cell In[{e.exec_count}]: {e.ename}: {e.evalue}",
+                            fg=typer.colors.RED,
+                        )
                     return 1
             except Exception:
-                typer.secho("\nbuild aborted by unhandled exception:", fg=typer.colors.RED)
+                typer.secho(
+                    "\nbuild aborted by unhandled exception:", fg=typer.colors.RED
+                )
                 traceback.print_exc()
                 return 1
 

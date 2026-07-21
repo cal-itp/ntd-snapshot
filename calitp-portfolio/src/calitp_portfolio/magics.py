@@ -22,7 +22,11 @@ def capture_parameters(line, cell):
     shell.run_cell(cell, silent=True)
     # We assume the last line is a tuple
     tup = [s.strip() for s in cell.strip().split("\n")[-1].split(",")]
-    print(json.dumps({identifier: shell.user_ns[identifier] for identifier in tup if identifier}))
+    print(
+        json.dumps(
+            {identifier: shell.user_ns[identifier] for identifier in tup if identifier}
+        )
+    )
 
 
 # Dont register outside a papermill kernal (pytest)

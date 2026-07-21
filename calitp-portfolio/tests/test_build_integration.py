@@ -16,9 +16,8 @@ Check:
 import shutil
 from pathlib import Path
 
-from typer.testing import CliRunner
-
 from calitp_portfolio.cli import app
+from typer.testing import CliRunner
 
 runner = CliRunner()
 

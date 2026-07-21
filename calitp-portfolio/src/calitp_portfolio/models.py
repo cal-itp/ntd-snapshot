@@ -27,11 +27,17 @@ def slugify_params(params: Dict) -> str:
 def parameterize_filename(i: int, old_path: Path, params: Dict) -> Path:
     assert old_path.suffix == ".ipynb"
 
-    return Path(str(i).zfill(2) + "__" + old_path.stem + "__" + slugify_params(params) + old_path.suffix)
+    return Path(
+        str(i).zfill(2)
+        + "__"
+        + old_path.stem
+        + "__"
+        + slugify_params(params)
+        + old_path.suffix
+    )
 
 
 class YamlPartialDumper(yaml.Dumper):
-
     def increase_indent(self, flow=False, indentless=False):
         return super(YamlPartialDumper, self).increase_indent(flow, False)
 
@@ -69,7 +75,9 @@ class Chapter(BaseModel):
         sees in `list` is the same string they'd see in build artifacts."""
         if self.sections:
             return self.slug
-        return parameterize_filename(0, self.resolved_notebook, self.resolved_params).stem
+        return parameterize_filename(
+            0, self.resolved_notebook, self.resolved_params
+        ).stem
 
     @property
     def output_dir(self):
@@ -102,9 +110,14 @@ class Chapter(BaseModel):
                 if isinstance(notebook, str):
                     notebook = Path(notebook)
 
-                parameterized_path = self.path / Path(parameterize_filename(two_digit_i, notebook, params))
+                parameterized_path = self.path / Path(
+                    parameterize_filename(two_digit_i, notebook, params)
+                )
 
-                typer.secho(f"parameterizing {notebook} => {parameterized_path}", fg=typer.colors.GREEN)
+                typer.secho(
+                    f"parameterizing {notebook} => {parameterized_path}",
+                    fg=typer.colors.GREEN,
+                )
 
                 if execute_papermill:
                     try:
@@ -142,9 +155,14 @@ class Chapter(BaseModel):
             if isinstance(notebook, str):
                 notebook = Path(notebook)
 
-            parameterized_path = self.path / Path(parameterize_filename("00", notebook, self.resolved_params))
+            parameterized_path = self.path / Path(
+                parameterize_filename("00", notebook, self.resolved_params)
+            )
 
-            typer.secho(f"parameterizing {notebook} => {parameterized_path}", fg=typer.colors.GREEN)
+            typer.secho(
+                f"parameterizing {notebook} => {parameterized_path}",
+                fg=typer.colors.GREEN,
+            )
 
             if execute_papermill:
                 try:
@@ -169,7 +187,8 @@ class Chapter(BaseModel):
                         raise
             else:
                 typer.secho(
-                    f"execute_papermill={execute_papermill} so we are skipping actual execution", fg=typer.colors.YELLOW
+                    f"execute_papermill={execute_papermill} so we are skipping actual execution",
+                    fg=typer.colors.YELLOW,
                 )
 
         return errors
@@ -205,7 +224,9 @@ class Chapter(BaseModel):
                 "file": f"{folder}{parameterize_filename('00', self.resolved_notebook, self.resolved_params)}",
             }
         else:
-            return {"file": f"{folder}{parameterize_filename('00', self.resolved_notebook, self.resolved_params)}"}
+            return {
+                "file": f"{folder}{parameterize_filename('00', self.resolved_notebook, self.resolved_params)}"
+            }
 
 
 class Part(BaseModel):
@@ -324,7 +345,9 @@ def load_site(yml_path: Path, output_dir: Optional[Path] = None) -> Site:
 
     yml_output_dir = data.pop("output_dir", None)
     resolved_output_dir = output_dir or (
-        (yml_path.parent / yml_output_dir) if yml_output_dir else (yml_path.parent / yml_path.stem)
+        (yml_path.parent / yml_output_dir)
+        if yml_output_dir
+        else (yml_path.parent / yml_path.stem)
     )
     return Site(
         output_dir=resolved_output_dir,

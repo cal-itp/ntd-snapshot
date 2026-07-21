@@ -14,7 +14,9 @@ from snapshot_utils import geography_utils
 credentials, project = google.auth.default()
 
 
-def basic_sql_query(project_name: str, dataset_name: str, table_name: str, columns: list = None) -> str:
+def basic_sql_query(
+    project_name: str, dataset_name: str, table_name: str, columns: list = None
+) -> str:
     """
     Set up the basic sql query needed, which is the entire table.
     """
@@ -43,7 +45,9 @@ def add_sql_date_filter(date_col: str, start_date: str, end_date: str) -> str:
     if start_date == "" and end_date == "":
         where_condition = ""
     else:
-        where_condition = f"{date_col} >= DATE('{start_date}') AND {date_col} <= DATE('{end_date}')"
+        where_condition = (
+            f"{date_col} >= DATE('{start_date}') AND {date_col} <= DATE('{end_date}')"
+        )
 
     return where_condition
 
@@ -107,12 +111,16 @@ def download_table(
     if (date_col is not None) and (date_condition != ""):
         sql_query_statement = f"{basic_query} WHERE {date_condition}"
 
-    df = pandas_gbq.read_gbq(sql_query_statement, project_id=project_name, dialect="standard", credentials=credentials)
+    df = pandas_gbq.read_gbq(
+        sql_query_statement,
+        project_id=project_name,
+        dialect="standard",
+        credentials=credentials,
+    )
 
     print(f"query: {sql_query_statement}")
 
     if geom_col is not None:
-
         df = geography_utils.convert_to_gdf(df, geom_col, geom_type)
 
     df = df.pipe(fix_date_columns).pipe(exclude_interval_columns)
@@ -170,10 +178,14 @@ def set_bq_query_params(
     if scalar_query_parameter is not None:
         for column_name, column_value in scalar_query_parameter.items():
             if isinstance(column_value, str):
-                one_param = bigquery.ScalarQueryParameter(column_name, "STRING", column_value)
+                one_param = bigquery.ScalarQueryParameter(
+                    column_name, "STRING", column_value
+                )
 
             elif isinstance(column_value, int):
-                one_param = bigquery.ScalarQueryParameter(column_name, "INT64", column_value)
+                one_param = bigquery.ScalarQueryParameter(
+                    column_name, "INT64", column_value
+                )
 
             query_params.append(one_param)
 
@@ -181,10 +193,14 @@ def set_bq_query_params(
         for column_name, column_list_of_values in array_query_parameter.items():
             first_value = column_list_of_values[0]
             if isinstance(first_value, str):
-                one_param = bigquery.ArrayQueryParameter(column_name, "STRING", column_list_of_values)
+                one_param = bigquery.ArrayQueryParameter(
+                    column_name, "STRING", column_list_of_values
+                )
 
             elif isinstance(first_value, int):
-                one_param = bigquery.ArrayQueryParameter(column_name, "INT64", column_list_of_values)
+                one_param = bigquery.ArrayQueryParameter(
+                    column_name, "INT64", column_list_of_values
+                )
 
             query_params.append(one_param)
 

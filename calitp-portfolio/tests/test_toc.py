@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 import pytest
-
 from calitp_portfolio.models import load_site
 
 SITE_FIXTURES = Path(__file__).parent / "fixtures" / "sites"

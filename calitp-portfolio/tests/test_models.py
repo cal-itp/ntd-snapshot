@@ -2,7 +2,6 @@ from pathlib import Path
 
 import pytest
 import yaml
-
 from calitp_portfolio.models import DeployTargets, Site, load_site
 
 SITE_FIXTURES = Path(__file__).parent / "fixtures" / "sites"
@@ -22,7 +21,9 @@ def _load_site(yml_name: str) -> Site:
     path = SITE_FIXTURES / yml_name
     name = path.stem
     with open(path) as f:
-        return Site(output_dir=Path("./portfolio") / name, name=name, **yaml.safe_load(f))
+        return Site(
+            output_dir=Path("./portfolio") / name, name=name, **yaml.safe_load(f)
+        )
 
 
 @pytest.mark.parametrize("yml_name", ALL_TEST_YMLS)
@@ -84,7 +85,10 @@ def test_section_fixture_chapters_carry_sections():
     site = _load_site("_section_analyses_test.yml")
     chapter = site.parts[0].chapters[0]
     assert chapter.caption == "Daily Greetings"
-    assert chapter.sections == [{"greetings": "Good Morning!"}, {"greetings": "Good Afternoon!"}]
+    assert chapter.sections == [
+        {"greetings": "Good Morning!"},
+        {"greetings": "Good Afternoon!"},
+    ]
 
 
 def test_back_references_wired_after_init():
@@ -103,11 +107,13 @@ def test_deploy_block_parses_into_submodel():
 
 def test_deploy_block_is_required():
     """Every site yml must declare a deploy: block (with at least staging)."""
-    yml_text = (
-        "title: No Deploy\ndirectory: ./tests/fixtures/portfolio/\nreadme: ./tests/fixtures/portfolio/README.md\n"
-    )
+    yml_text = "title: No Deploy\ndirectory: ./tests/fixtures/portfolio/\nreadme: ./tests/fixtures/portfolio/README.md\n"
     with pytest.raises(Exception):
-        Site(output_dir=Path("./portfolio/no_deploy"), name="no_deploy", **yaml.safe_load(yml_text))
+        Site(
+            output_dir=Path("./portfolio/no_deploy"),
+            name="no_deploy",
+            **yaml.safe_load(yml_text),
+        )
 
 
 def test_load_site_default_output_dir_is_yml_parent_stem(tmp_path):
