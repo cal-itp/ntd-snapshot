@@ -16,7 +16,7 @@ sites:
     source: https://github.com/cal-itp/data-analyses/tree/main/ca_transit_speed_maps/
   - title: District GTFS Digest
     name: district_digest
-    source: ./gtfs_digest/ https://github.com/cal-itp/data-analyses/tree/main/gtfs_digest/
+    source: https://github.com/cal-itp/data-analyses/tree/main/gtfs_digest/
   - title: GTFS Digest
     name: gtfs_digest
     source: https://github.com/cal-itp/data-analyses/tree/main/gtfs_digest/
