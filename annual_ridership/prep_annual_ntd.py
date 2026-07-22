@@ -158,4 +158,4 @@ if __name__ == "__main__":
     aggregate_annual_and_export(df)
 
     # set directory as . not ./
-    generate_yaml(Path("./ntd_annual_ridership_report.yml"))
+    generate_yaml(Path("./ntd_annual_ridership.yml"))
