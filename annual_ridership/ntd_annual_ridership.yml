@@ -65,5 +65,5 @@ parts:
       - params:
           rtpa: Ventura County Transportation Commission
 deploy:
-  staging: gs://calitp-analysis-staging/ntd_annual_ridership_report
-  prod: gs://calitp-analysis/ntd_annual_ridership_report
+  staging: gs://calitp-analysis-staging/ntd_annual_ridership
+  prod: gs://calitp-analysis/ntd_annual_ridership
