@@ -111,7 +111,4 @@ def annual_report_by_rtpa(
 
 
 if __name__ == "__main__":
-    annual_report_by_rtpa(
-        report_aggregation="annual",
-        upload_to_public=True,
-    )
+    annual_report_by_rtpa(report_aggregation="annual", upload_to_public=True)

@@ -122,7 +122,8 @@ def aggregate_annual_and_export(
 def generate_yaml(site_path: Path):
     """
     Do RTPAs show up consistently?
-    monthly / annual reports are different lists, but
+    monthly / annual reports are different lists,
+        but not all RTPAs have pages.
     """
     site = load_site(site_path)
 
