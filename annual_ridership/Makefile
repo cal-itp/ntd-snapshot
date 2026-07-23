@@ -15,4 +15,4 @@ annual_portfolio:
 change_portfolio_name:
 	# update the deploy names in ntd_annual_ridership.yml and sites.yml
 	uv run calitp-portfolio index ../calitp-portfolio-sites/sites.yml --deploy --target staging 
-	uv run calitp-portfolio index ../calitp-portfolio-sites/sites.yml --deploy --target prod
+	uv run calitp-portfolio index ../calitp-portfolio-sites/sites.yml --deploy --target prod --output /tmp/index.html
