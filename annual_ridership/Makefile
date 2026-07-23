@@ -10,5 +10,9 @@ annual_portfolio:
 	uv run calitp-portfolio build ntd_annual_ridership.yml --hide-title-block
 	uv run calitp-portfolio login
 	uv run calitp-portfolio deploy ntd_annual_ridership.yml --target staging
-	# uv run calitp-portfolio index ../calitp-portfolio-sites/sites.yml --deploy --target staging # use when updating the name from ntd_annual_ridership_report to ntd_annual_ridership in ntd_annual_ridership.yaml and sites.yml
-	uv run calitp-portfolio deploy ntd_annual_ridership.yml --target prod
+	#uv run calitp-portfolio deploy ntd_annual_ridership.yml --target prod
+
+change_portfolio_name:
+	# update the deploy names in ntd_annual_ridership.yml and sites.yml
+	uv run calitp-portfolio index ../calitp-portfolio-sites/sites.yml --deploy --target staging 
+	uv run calitp-portfolio index ../calitp-portfolio-sites/sites.yml --deploy --target prod
