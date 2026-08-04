@@ -55,7 +55,9 @@ jobs:
         run: uv sync --all-groups
       
       - name: Login for portfolio
-        run: uv run calitp-portfolio login --quiet
+        run: uv run calitp-portfolio login
+        env:
+          service_account: ${{ env.SERVICE_ACCOUNT }}
 
       - name: Deploy index Staging
         if: ${{ github.ref != 'refs/heads/main' }}
