@@ -52,7 +52,7 @@ jobs:
           cache-python: true
 
       - name: Install portfolio packages
-        run: uv sync --group calitp-portfolio --locked --all-extras --dev
+        run: uv sync --all-groups
 
       - name: Deploy index Staging
         if: ${{ github.ref != 'refs/heads/main' }}
