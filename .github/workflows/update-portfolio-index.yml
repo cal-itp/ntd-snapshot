@@ -16,7 +16,7 @@ on:
 env:
   PYTHON_VERSION: '3.11'
   SERVICE_ACCOUNT: ${{ github.ref == 'refs/heads/main' && 'github-actions-service-account@cal-itp-data-infra.iam.gserviceaccount.com' || 'github-actions-service-account@cal-itp-data-infra-staging.iam.gserviceaccount.com' }}
-  WORKLOAD_IDENTITY_PROVIDER: ${{ github.ref == 'refs/heads/main' && 'projects/1005246706141/locations/global/workloadIdentityPools/github-actions/providers/analysis' || 'projects/473674835135/locations/global/workloadIdentityPools/github-actions/providers/ntd-snapshot' }}
+  WORKLOAD_IDENTITY_PROVIDER: ${{ github.ref == 'refs/heads/main' && 'projects/1005246706141/locations/global/workloadIdentityPools/github-actions/providers/ntd-snapshot' || 'projects/473674835135/locations/global/workloadIdentityPools/github-actions/providers/ntd-snapshot' }}
   PROJECT_ID: ${{ github.ref == 'refs/heads/main' && 'cal-itp-data-infra' || 'cal-itp-data-infra-staging' }}
 
 
