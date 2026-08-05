@@ -64,7 +64,9 @@ def index(
         help="After rendering, upload index.html to the manifest's deploy target.",
     ),
     service_account: bool = typer.Option(
-        False, "--service-account", help="Set --service-account for GH action."
+        False,
+        "--service-account",
+        help="For GH action only, use --service-account. Credentials pass through GH runner.",
     ),
 ) -> None:
     """Render the portfolio landing page from a sites.yml manifest."""
@@ -83,11 +85,12 @@ def index(
         target_url = _resolve_target_url(
             manifest.deploy, target, source_label="sites.yml"
         )
-        if not service_account:
-            _require_auth()
+
+        # For service account, GH action generates a hash that is used as credential
         if service_account:
-            typer.echo("service account is true")
             pass
+        else:
+            _require_auth()
         deployer.upload_file(target_url, output_path)
         typer.echo(f"deployed {output_path} -> {target_url}")
 
@@ -309,8 +312,7 @@ def login_service_account() -> None:
     """Authenticate to Google Cloud using the Cal-ITP login config bundled with this tool."""
     if auth.is_valid():
         returncode = 0
-    typer.echo(f"this is return code: {returncode}")
-    if returncode != 0:
+    elif returncode != 0:
         raise typer.Exit(code=returncode)
 
 

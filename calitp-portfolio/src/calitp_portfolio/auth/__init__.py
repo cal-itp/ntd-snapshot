@@ -29,12 +29,3 @@ def login() -> int:
         f"--login-config={LOGIN_CONFIG}",
     ]
     return subprocess.run(cmd).returncode
-
-
-def login_service_account() -> int:
-    """Run `gcloud auth application-default login` with the bundled Cal-ITP config. Returns gcloud's exit code."""
-    result = subprocess.run(
-        ["gcloud", "auth", "application-default", "print-access-token"],
-        capture_output=True,
-    )
-    return result.returncode == 0
