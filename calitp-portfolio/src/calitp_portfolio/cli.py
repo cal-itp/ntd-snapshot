@@ -86,6 +86,7 @@ def index(
         if not service_account:
             _require_auth()
         if service_account:
+            typer.echo("service account is true")
             pass
         deployer.upload_file(target_url, output_path)
         typer.echo(f"deployed {output_path} -> {target_url}")
@@ -307,6 +308,7 @@ def login() -> None:
 def login_service_account() -> None:
     """Authenticate to Google Cloud using the Cal-ITP login config bundled with this tool."""
     returncode = auth.is_valid()
+    typer.echo(f"this is return code: {returncode}")
     if returncode != 0:
         raise typer.Exit(code=returncode)
 
