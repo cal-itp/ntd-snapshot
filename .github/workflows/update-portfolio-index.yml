@@ -1,0 +1,68 @@
+name: Update and deploy portfolio index site
+
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - '.github/workflows/update-portfolio-index.yml'
+      - 'calitp-portfolio/**'
+  pull_request:
+    paths:
+      - '.github/workflows/update-portfolio-index.yml'
+      - 'calitp-portfolio/**'
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+  SERVICE_ACCOUNT: ${{ github.ref == 'refs/heads/main' && 'github-actions-service-account@cal-itp-data-infra.iam.gserviceaccount.com' || 'github-actions-service-account@cal-itp-data-infra-staging.iam.gserviceaccount.com' }}
+  WORKLOAD_IDENTITY_PROVIDER: ${{ github.ref == 'refs/heads/main' && 'projects/1005246706141/locations/global/workloadIdentityPools/github-actions/providers/ntd-snapshot' || 'projects/473674835135/locations/global/workloadIdentityPools/github-actions/providers/ntd-snapshot' }}
+  PROJECT_ID: ${{ github.ref == 'refs/heads/main' && 'cal-itp-data-infra' || 'cal-itp-data-infra-staging' }}
+
+
+jobs:
+  deploy-index:
+    name: Deploy index
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Authenticate Google Service Account
+        uses: google-github-actions/auth@v2
+        with:
+          create_credentials_file: 'true'
+          project_id: ${{ env.PROJECT_ID }}
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
+
+      - name: Setup GCloud utilities
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          enable-cache: true
+          cache-python: true
+
+      - name: Install portfolio packages
+        run: uv sync --all-groups
+      
+      - name: Login for portfolio
+        run: uv run calitp-portfolio login-service-account
+        env:
+          service_account: ${{ env.SERVICE_ACCOUNT }}
+
+      - name: Deploy index Staging
+        if: ${{ github.ref != 'refs/heads/main' }}
+        run: uv run calitp-portfolio index calitp-portfolio-sites/sites.yml --output /tmp/index.html --deploy --target staging --service-account && rm /tmp/index.html
+
+      - name: Deploy index Production
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: uv run calitp-portfolio index calitp-portfolio-sites/sites.yml --output /tmp/index.html --deploy --target prod --service-account && rm /tmp/index.html
