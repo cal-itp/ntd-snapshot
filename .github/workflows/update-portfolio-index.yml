@@ -55,7 +55,7 @@ jobs:
         run: uv sync --all-groups
       
       - name: Login for portfolio
-        run: uv run calitp-portfolio login
+        run: uv run calitp-portfolio login_service_account
         env:
           service_account: ${{ env.SERVICE_ACCOUNT }}
 
