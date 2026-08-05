@@ -61,7 +61,7 @@ jobs:
 
       - name: Deploy index Staging
         if: ${{ github.ref != 'refs/heads/main' }}
-        run: uv run calitp-portfolio index calitp-portfolio-sites/sites.yml --deploy --target staging
+        run: uv run calitp-portfolio index calitp-portfolio-sites/sites.yml --deploy --target staging --service-account
 
       - name: Deploy index Production
         if: ${{ github.ref == 'refs/heads/main' }}
