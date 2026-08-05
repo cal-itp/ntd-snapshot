@@ -64,7 +64,7 @@ def index(
         help="After rendering, upload index.html to the manifest's deploy target.",
     ),
     service_account: bool = typer.Option(
-        False,
+        False, "--service-account", help="Set --service-account for GH action."
     ),
 ) -> None:
     """Render the portfolio landing page from a sites.yml manifest."""
