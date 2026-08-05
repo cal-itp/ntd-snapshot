@@ -297,6 +297,14 @@ def login() -> None:
         raise typer.Exit(code=returncode)
 
 
+@app.command()
+def login_service_account() -> None:
+    """Authenticate to Google Cloud using the Cal-ITP login config bundled with this tool."""
+    returncode = auth.login_service_account()
+    if returncode != 0:
+        raise typer.Exit(code=returncode)
+
+
 _WCAG_PRESETS = {
     "a": ["wcag2a"],
     "aa": ["wcag2a", "wcag2aa", "wcag21aa"],
