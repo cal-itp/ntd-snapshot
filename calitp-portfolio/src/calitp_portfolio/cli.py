@@ -306,7 +306,7 @@ def login() -> None:
 @app.command()
 def login_service_account() -> None:
     """Authenticate to Google Cloud using the Cal-ITP login config bundled with this tool."""
-    returncode = auth.login_service_account()
+    returncode = auth.is_valid()
     if returncode != 0:
         raise typer.Exit(code=returncode)
 
