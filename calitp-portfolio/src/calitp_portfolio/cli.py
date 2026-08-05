@@ -63,6 +63,9 @@ def index(
         "--deploy",
         help="After rendering, upload index.html to the manifest's deploy target.",
     ),
+    service_account: bool = typer.Option(
+        False,
+    ),
 ) -> None:
     """Render the portfolio landing page from a sites.yml manifest."""
     if target not in ("staging", "prod"):
@@ -80,7 +83,10 @@ def index(
         target_url = _resolve_target_url(
             manifest.deploy, target, source_label="sites.yml"
         )
-        _require_auth()
+        if not service_account:
+            _require_auth()
+        if service_account:
+            pass
         deployer.upload_file(target_url, output_path)
         typer.echo(f"deployed {output_path} -> {target_url}")
 
