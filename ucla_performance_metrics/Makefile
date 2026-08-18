@@ -1,4 +1,5 @@
 ucla_metrics_portfolio:
+	uv run python prep_portfolio_yaml.py
 	# uv run calitp-portfolio build ucla_ntd_performance_metrics.yml --hide-title-block --limit 4 # use this for dry run
 	uv run calitp-portfolio build ucla_ntd_performance_metrics.yml --hide-title-block
 	uv run calitp-portfolio login
