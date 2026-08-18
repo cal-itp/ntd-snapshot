@@ -40,7 +40,7 @@ sites:
     source: ./monthly_ridership/ 
   - title: UCLA NTD Transit Performance Metrics
     name: ucla_ntd_performance_metrics
-    source: https://github.com/cal-itp/ntd-snapshot/tree/main/ucla_performance_metrics/ 
+    source: ./ucla_performance_metrics/ 
   - title: Potential Detour Stops using GTFS Vehicle Positions
     name: detour_stops
     source: https://github.com/cal-itp/data-analyses/tree/main/rt_predictions/
@@ -50,7 +50,10 @@ sites:
   - title: Thruway Bus Analysis
     name: thruway_intercity_bus
     source: https://github.com/cal-itp/data-analyses/tree/main/thruway_intercity_bus/
-
+  - title: Transit Events Analysis
+    name: transit_events
+    source: https://github.com/cal-itp/gtfs-curator/tree/main/transit_events/
+    
 test_sites:
   - title: Basic Analyses Test
     name: _basic_analyses_test
