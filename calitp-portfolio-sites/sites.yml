@@ -38,9 +38,9 @@ sites:
   - title: NTD Monthly Ridership by RTPA
     name: ntd_monthly_ridership
     source: ./monthly_ridership/ 
-  - title: New Transit Performance Metrics
-    name: new_transit_metrics
-    source: https://github.com/cal-itp/data-analyses/tree/main/ntd/new_transit_metrics/ 
+  - title: UCLA NTD Transit Performance Metrics
+    name: ucla_ntd_performance_metrics
+    source: https://github.com/cal-itp/ntd-snapshot/tree/main/ucla_performance_metrics/ 
   - title: Potential Detour Stops using GTFS Vehicle Positions
     name: detour_stops
     source: https://github.com/cal-itp/data-analyses/tree/main/rt_predictions/
