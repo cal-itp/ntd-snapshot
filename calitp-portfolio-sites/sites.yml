@@ -22,10 +22,10 @@ sites:
     source: https://github.com/cal-itp/data-analyses/tree/main/gtfs_digest/
   - title: GTFS Real-Time Operator Summary Metrics
     name: rt_operator_metrics
-    source: https://github.com/cal-itp/data-analyses/tree/main/rt_predictions/
+    source: https://github.com/cal-itp/gtfs-curator/tree/main/rt_predictions/
   - title: GTFS Real-Time Stop Metrics
     name: rt_stop_metrics
-    source: https://github.com/cal-itp/data-analyses/tree/main/rt_predictions/
+    source: https://github.com/cal-itp/gtfs-curator/tree/main/rt_predictions/
   - title: HQ Transit Corridor & Major Bus Stop Explorer
     name: hqta_explorer
     source: https://github.com/cal-itp/data-analyses/tree/main/high_quality_transit_areas/
@@ -43,7 +43,7 @@ sites:
     source: ./ucla_performance_metrics/ 
   - title: Potential Detour Stops using GTFS Vehicle Positions
     name: detour_stops
-    source: https://github.com/cal-itp/data-analyses/tree/main/rt_predictions/
+    source: https://github.com/cal-itp/gtfs-curator/tree/main/rt_vehicle_positions/
   - title: SB125 Fund Split Analysis
     name: sb125_fund_split_analysis
     source: https://github.com/cal-itp/data-analyses/tree/main/sb125_analyses/sb125_fund_split_analysis/
