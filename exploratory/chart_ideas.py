@@ -66,8 +66,11 @@ def mode_trend_chart(df, value_column):
     )
     
     # Combine
-    trend_chart = alt.layer(line, selectors, points, rules)
+    trend_chart = (
+        alt.layer(line, selectors, points, rules)
         .properties(width=700, height=400)
+    )
+
 
     return trend_chart
     

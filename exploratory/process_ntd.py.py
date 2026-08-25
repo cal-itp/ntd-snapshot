@@ -20,7 +20,7 @@ def add_mode_group(df):
                    if x in bus_modes
                    else "Rail"
                    if x in rail_modes
-                   else "Other
+                   else "Other"
                   )
     )
 
