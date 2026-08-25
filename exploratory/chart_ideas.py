@@ -1,76 +1,73 @@
 # Chart functions
 import altair as alt
+import matplotlib.pyplot as plt
+import pandas as pd
+from pypalettes import load_palette
 from pywaffle import Waffle
-
-from process_ntd import (
-    load_service_and_opex,
-    subset_california,
-    add_mode_group,
-)
 
 alt.data_transformers.enable("vegafusion")
 
-def prep_for_mode_trend(df):
+
+def prep_for_mode_trend(df, value_column):
     trend_df = (
         df.groupby(["year", "mode_group"])[value_column]
         .sum()
         .reset_index()
     )
-
     trend_df[value_column] = (
         trend_df[value_column]
         .round(0)
         .astype(int)
     )
-
     return trend_df
+
 
 def mode_trend_chart(df, value_column):
     nearest = alt.selection_point(
-        nearest = True,
-        on= "pointerover",
+        nearest=True,
+        on="pointerover",
         fields=["year"],
         empty=False,
     )
 
     line = alt.Chart(df).mark_line().encode(
         x="year:O",
-        y = alt.Y(f"{value_column}:Q"),
-        color= "mode_group:N",
+        y=alt.Y(f"{value_column}:Q"),
+        color="mode_group:N",
     )
-    
+
     selectors = (
         alt.Chart(df)
         .mark_point()
         .encode(
-            x= "year:O",
-            opacity = alt.value(0))
+            x="year:O",
+            opacity=alt.value(0),
+        )
         .add_params(nearest)
     )
 
-    # Highlight points
     points = line.mark_point().encode(
         opacity=alt.when(nearest).then(alt.value(1)).otherwise(alt.value(0)),
         tooltip=[
             "year",
             "mode_group",
-            alt.Tooltip("unlinked_passenger_trips:Q", format=",")
-        ]
+            alt.Tooltip(f"{value_column}:Q", format=","),
+        ],
     )
-    
-    # Vertical hover line
-    rules = alt.Chart(ca_bus_rail_upt).mark_rule(color="gray").encode(
-        x="year:O"
-    ).transform_filter(
-        nearest
+
+    rules = (
+        alt.Chart(df)
+        .mark_rule(color="gray")
+        .encode(x="year:O")
+        .transform_filter(nearest)
     )
-    
-    # Combine
-    trend_chart = alt.layer(line, selectors, points, rules)
+
+    trend_chart = (
+        alt.layer(line, selectors, points, rules)
         .properties(width=700, height=400)
+    )
 
     return trend_chart
-    
 
 
 def scatter_plot_regression(
@@ -80,7 +77,7 @@ def scatter_plot_regression(
     tooltip_columns=None,
     chart_title=None
 ):
-    """Creates a filtered scatter plot with a regression trend line.."""
+    """Creates a filtered scatter plot with a regression trend line."""
 
     df_filtered = df[
         (df[x_variable] > 0) & (df[y_variable] > 0)
@@ -92,8 +89,8 @@ def scatter_plot_regression(
     scatter = alt.Chart(df_filtered).mark_circle(
         opacity=0.5
     ).encode(
-        x=alt.X(x_variable + ':Q', title=x_variable),
-        y=alt.Y(y_variable + ':Q', title=y_variable),
+        x=alt.X(x_variable + ":Q", title=x_variable),
+        y=alt.Y(y_variable + ":Q", title=y_variable),
         tooltip=tooltip_columns
     )
 
@@ -101,11 +98,11 @@ def scatter_plot_regression(
         x_variable,
         y_variable
     ).mark_line(
-        color='darkblue',
+        color="darkblue",
         size=3
     ).encode(
-        x=x_variable + ':Q',
-        y=y_variable + ':Q'
+        x=x_variable + ":Q",
+        y=y_variable + ":Q"
     )
 
     compare_chart = (scatter + trend).properties(
@@ -142,7 +139,6 @@ def waffle_by_year(
         rows: Number of rows of squares in each waffle.
         columns: Number of columns of squares in each waffle.
     """
-
     df_plot = df.copy()
 
     if years is not None:
@@ -195,7 +191,6 @@ def waffle_by_year(
         axs = [axs]
 
     for year, ax in zip(sorted(all_years), axs):
-
         values = list(
             df_plot[
                 df_plot[year_column] == year
@@ -245,6 +240,7 @@ def waffle_by_year(
     plt.tight_layout()
     return fig
 
+
 def before_after_trail(
     df,
     value_column,
@@ -276,7 +272,6 @@ def before_after_trail(
         width: Width of each chart panel.
         height: Height of each chart panel.
     """
-
     df_plot = df.copy()
 
     if selected_groups is not None:
@@ -293,26 +288,21 @@ def before_after_trail(
         .encode(
             x=alt.X(year_column + ":O")
                 .title(None),
-
             y=alt.Y(category_column + ":N")
                 .title(None),
-
             size=alt.Size(value_column + ":Q")
                 .scale(range=[5, 20])
                 .title(value_column),
-
             color=alt.Color("delta:Q")
                 .scale(
                     domainMid=0,
                     range=["maroon", "lightgray", "blue"]
                 )
                 .title(change_label),
-
             tooltip=[
                 alt.Tooltip(year_column + ":O", title="Year"),
                 alt.Tooltip(value_column + ":Q", title=value_column)
             ],
-
             column=alt.Column(group_column + ":N")
                 .title(group_column)
         )
@@ -382,7 +372,6 @@ def percent_stacked_bar(
         width: Chart width.
         height: Chart height.
     """
-
     df_plot = df.copy()
 
     if year_column is not None and year is not None:
@@ -401,7 +390,6 @@ def percent_stacked_bar(
         df_plot = df_plot[
             df_plot[group_column].isin(top_groups)
         ]
-
     else:
         top_groups = (
             df_plot[group_column]
@@ -455,14 +443,12 @@ def percent_stacked_bar(
                 sort=top_groups,
                 axis=alt.Axis(labelAngle=-25)
             ),
-
             y=alt.Y(
                 "sum(percentage):Q",
                 title=y_title,
                 scale=alt.Scale(domain=[0, 100]),
                 axis=alt.Axis(format=".0f")
             ),
-
             color=alt.Color(
                 "category:N",
                 title="Category",
@@ -472,7 +458,6 @@ def percent_stacked_bar(
                     else alt.Scale()
                 )
             ),
-
             tooltip=[
                 alt.Tooltip(
                     group_column + ":N",
@@ -543,22 +528,18 @@ def ridge_plot(
         x_title: Optional x-axis title.
         category_title: Optional category legend title.
     """
-
     df_plot = df.copy()
 
-    # Filter year
     if year_column is not None and year is not None:
         df_plot = df_plot[df_plot[year_column] == year]
 
-    # Apply additional filters
     if filters is not None:
         for column, values in filters.items():
             if isinstance(values, list):
                 df_plot = df_plot[df_plot[column].isin(values)]
             else:
-                df_plot = df_plot[df_plot[column] != values]
+                df_plot = df_plot[df_plot[column] == values]
 
-    # Filter invalid values
     df_plot = df_plot[
         df_plot[value_column].notna()
     ]
@@ -587,7 +568,6 @@ def ridge_plot(
                 value_column + ":Q",
                 title=x_title or value_column
             ),
-
             y=alt.Y(
                 "density:Q",
                 axis=None,
@@ -595,12 +575,10 @@ def ridge_plot(
                     range=[step, -step * overlap]
                 )
             ),
-
             color=alt.Color(
                 category_column + ":N",
                 title=category_title or category_column
             ),
-
             tooltip=[
                 alt.Tooltip(
                     category_column + ":N",
@@ -640,19 +618,3 @@ def ridge_plot(
     )
 
     return chart
-
-
-    
-                
-        
-    
-
-
-       
-        
-
-    
-            
-        
-        
-        
