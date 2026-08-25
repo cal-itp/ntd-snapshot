@@ -6,8 +6,10 @@ from _utils import GCS_FILE_PATH
 def load_service_and_opex():
     return pd.read_parquet(f"{GCS_FILE_PATH}annual_service_and_opex.parquet")
 
+
 def subset_california(df):
     return df[df["source_state"] == "CA"].copy()
+
 
 def add_mode_group(df):
     bus_modes = ["Bus", "Bus Rapid Transit", "Commuter Bus", "Trolleybus"]
@@ -21,17 +23,12 @@ def add_mode_group(df):
         "Cable Car",
     ]
 
-
     df["mode_group"] = df["mode_full_name"].map(
-        lambda x: ("Bus" 
-                   if x in bus_modes
-                   else "Rail"
-                   if x in rail_modes
-                   else "Other"
-                  )
+        lambda x: "Bus" if x in bus_modes else "Rail" if x in rail_modes else "Other"
     )
 
-    return df 
+    return df
+
 
 def round_tooltip_columns(df):
     columns_to_round = [
@@ -47,9 +44,7 @@ def round_tooltip_columns(df):
 
     return df
 
+
 def load_uza_shapes():
     url = "https://www2.census.gov/geo/tiger/TIGER2024/UAC20/tl_2024_us_uac20.zip"
-    uza_shapes = gpd.read_file(url)
-
-    return uza_shapes
-
+    return gpd.read_file(url)
