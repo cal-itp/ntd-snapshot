@@ -1,16 +1,13 @@
 # Chart functions
 import altair as alt
+import matplotlib.pyplot as plt
+import pandas as pd
+from pypalettes import load_palette
 from pywaffle import Waffle
-
-from process_ntd import (
-    load_service_and_opex,
-    subset_california,
-    add_mode_group,
-)
 
 alt.data_transformers.enable("vegafusion")
 
-def prep_for_mode_trend(df):
+def prep_for_mode_trend(df, value_column ):
     trend_df = (
         df.groupby(["year", "mode_group"])[value_column]
         .sum()
@@ -59,7 +56,7 @@ def mode_trend_chart(df, value_column):
     )
     
     # Vertical hover line
-    rules = alt.Chart(ca_bus_rail_upt).mark_rule(color="gray").encode(
+    rules = alt.Chart(df).mark_rule(color="gray").encode(
         x="year:O"
     ).transform_filter(
         nearest

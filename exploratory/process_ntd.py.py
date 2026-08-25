@@ -1,7 +1,6 @@
+import geopandas as gpd
 import pandas as pd
-import gcsfs
 from _utils import GCS_FILE_PATH
-from google.cloud import bigquery
 
 
 def load_service_and_opex():
