@@ -11,8 +11,16 @@ def subset_california(df):
 
 def add_mode_group(df):
     bus_modes = ["Bus", "Bus Rapid Transit", "Commuter Bus", "Trolleybus"]
-    rail_modes = ["Commuter Rail", "Heavy Rail", "Light Rail", "Streetcar", 
-                  "Hybrid Rail", "Monorail / Automated Guideway", "Cable Car",]
+    rail_modes = [
+        "Commuter Rail",
+        "Heavy Rail",
+        "Light Rail",
+        "Streetcar",
+        "Hybrid Rail",
+        "Monorail / Automated Guideway",
+        "Cable Car",
+    ]
+
 
     df["mode_group"] = df["mode_full_name"].map(
         lambda x: ("Bus" 
