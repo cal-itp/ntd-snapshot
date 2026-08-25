@@ -79,7 +79,7 @@ def scatter_plot_regression(
     tooltip_columns=None,
     chart_title=None
 ):
-    """Creates a filtered scatter plot with a regression trend line."""
+    """Creates a filtered scatter plot with a regression trend line.."""
 
     df_filtered = df[
         (df[x_variable] > 0) & (df[y_variable] > 0)
