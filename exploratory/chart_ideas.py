@@ -1,3 +1,4 @@
+# Chart functions
 import altair as alt
 from pywaffle import Waffle
 
