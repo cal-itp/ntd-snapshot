@@ -3,6 +3,8 @@ import geopandas as gpd
 import pandas as pd
 from _utils import GCS_FILE_PATH
 import requests
+from google.cloud import bigquery
+filesystem = gcsfs.GCSFileSystem()
 
 
 def load_service_and_opex():
@@ -26,6 +28,18 @@ def load_capex():
         f"{GCS_FILE_PATH}capital_expenditures.parquet",
         filesystem=filesystem,
     )
+
+def export_to_gcs(
+    df: pd.DataFrame,
+    filename: str,
+    filesystem: gcsfs.GCSFileSystem,
+) -> None:
+    df.to_parquet(
+        f"{GCS_FILE_PATH}{filename}.parquet",
+        filesystem=filesystem,
+    )
+
+    print(f"exported {filename}.parquet")
 
 
 def subset_california(df):
