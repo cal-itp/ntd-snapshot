@@ -106,8 +106,8 @@ def scatter_plot_regression(
     )
 
     compare_chart = (scatter + trend).properties(
-        width=600,
-        height=400,
+        width=300,
+        height=250,
         title=chart_title
     )
 
@@ -338,40 +338,10 @@ def before_after_trail(
 
 
 def percent_stacked_bar(
-    df,
-    group_column,
-    category_columns,
-    year_column=None,
-    year=None,
-    rank_column=None,
-    top_n=10,
-    chart_title=None,
-    chart_subtitle=None,
-    y_title="Percentage",
-    colors=None,
-    width=750,
-    height=450
+    df, group_column, category_columns, year_column=None, year=None,
+    rank_column=None, top_n=10, chart_title=None, chart_subtitle=None,
+    y_title="Percentage", colors=None, width=500, height=300
 ):
-    """
-    Creates a 100% stacked bar chart showing the composition of a value
-    across groups.
-
-    Parameters:
-        df: DataFrame containing the data.
-        group_column: What gets a bar (e.g., "source_agency").
-        category_columns: What makes up each bar, provided as a dictionary
-            mapping category names to value columns.
-        rank_column: What determines the top groups (e.g., "unlinked_passenger_trips").
-        year_column: Time variable used to filter the data (e.g., "year").
-        year: Specific year to include.
-        top_n: Number of top groups to display.
-        chart_title: Optional chart title.
-        chart_subtitle: Optional chart subtitle.
-        y_title: Label for the y-axis.
-        colors: Optional list of colors for the categories.
-        width: Chart width.
-        height: Chart height.
-    """
     df_plot = df.copy()
 
     if year_column is not None and year is not None:
@@ -379,117 +349,57 @@ def percent_stacked_bar(
 
     if rank_column is not None:
         top_groups = (
-            df_plot
-            .groupby(group_column)[rank_column]
-            .sum()
-            .nlargest(top_n)
-            .index
-            .tolist()
+            df_plot.groupby(group_column)[rank_column].sum()
+            .nlargest(top_n).index.tolist()
         )
-
-        df_plot = df_plot[
-            df_plot[group_column].isin(top_groups)
-        ]
+        df_plot = df_plot[df_plot[group_column].isin(top_groups)]
     else:
-        top_groups = (
-            df_plot[group_column]
-            .drop_duplicates()
-            .tolist()
-        )
+        top_groups = df_plot[group_column].drop_duplicates().tolist()
 
     data = (
-        df_plot
-        .groupby(group_column)[list(category_columns.values())]
-        .sum()
+        df_plot.groupby(group_column)[list(category_columns.values())].sum()
         .reset_index()
+        .melt(id_vars=group_column, var_name="category_column", value_name="amount")
     )
-
-    data = (
-        data[
-            [group_column] + list(category_columns.values())
-        ]
-        .melt(
-            id_vars=group_column,
-            var_name="category_column",
-            value_name="amount"
-        )
-    )
-
-    reverse_mapping = {
-        v: k for k, v in category_columns.items()
-    }
 
     data["category"] = data["category_column"].map(
-        reverse_mapping
+        {v: k for k, v in category_columns.items()}
     )
-
-    data["total"] = (
-        data
-        .groupby(group_column)["amount"]
-        .transform("sum")
-    )
-
     data["percentage"] = (
-        data["amount"] / data["total"] * 100
+        data["amount"] / data.groupby(group_column)["amount"].transform("sum") * 100
     )
 
-    chart = (
+    title = (
+        alt.TitleParams(text=chart_title, subtitle=chart_subtitle)
+        if chart_subtitle else chart_title
+    )
+
+    return (
         alt.Chart(data)
         .mark_bar()
         .encode(
             x=alt.X(
-                group_column + ":N",
-                title=group_column,
-                sort=top_groups,
+                f"{group_column}:N", title=group_column, sort=top_groups,
                 axis=alt.Axis(labelAngle=-25)
             ),
             y=alt.Y(
-                "sum(percentage):Q",
-                title=y_title,
+                "sum(percentage):Q", title=y_title,
                 scale=alt.Scale(domain=[0, 100]),
                 axis=alt.Axis(format=".0f")
             ),
             color=alt.Color(
-                "category:N",
-                title="Category",
-                scale=(
-                    alt.Scale(range=colors)
-                    if colors is not None
-                    else alt.Scale()
-                )
+                "category:N", title="Category",
+                scale=alt.Scale(range=colors) if colors else alt.Scale()
             ),
             tooltip=[
-                alt.Tooltip(
-                    group_column + ":N",
-                    title=group_column
-                ),
-                alt.Tooltip(
-                    "category:N",
-                    title="Category"
-                ),
-                alt.Tooltip(
-                    "percentage:Q",
-                    title="Share",
-                    format=".1f"
-                ),
-                alt.Tooltip(
-                    "amount:Q",
-                    title="Amount",
-                    format=",.0f"
-                )
+                alt.Tooltip(f"{group_column}:N", title=group_column),
+                alt.Tooltip("category:N", title="Category"),
+                alt.Tooltip("percentage:Q", title="Share", format=".1f"),
+                alt.Tooltip("amount:Q", title="Amount", format=",.0f")
             ]
         )
-        .properties(
-            title=alt.TitleParams(
-                text=chart_title,
-                subtitle=chart_subtitle
-            ),
-            width=width,
-            height=height
-        )
+        .properties(title=title, width=width, height=height)
     )
-
-    return chart
 
 
 def ridge_plot(
