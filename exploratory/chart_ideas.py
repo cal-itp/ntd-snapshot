@@ -22,96 +22,68 @@ def prep_for_mode_trend(df, value_column):
     return trend_df
 
 
-def mode_trend_chart(df, value_column):
-    nearest = alt.selection_point(
-        nearest=True,
-        on="pointerover",
-        fields=["year"],
-        empty=False,
+def mode_trend_chart(df, value_column, title=None, y_title=None):
+    nearest = alt.selection_point(nearest=True, on="pointerover", fields=["year"], empty=False)
+    base = alt.Chart(df)
+    title = title or f"{value_column.replace('_', ' ').title()} by Mode"
+    y_title = y_title or value_column.replace("_", " ").title()
+
+    line = base.mark_line(strokeWidth=2.5, interpolate="monotone").encode(
+        x=alt.X("year:O", title="Year", axis=alt.Axis(labelAngle=0, labelColor="#374151")),
+        y=alt.Y(f"{value_column}:Q", title=y_title, axis=alt.Axis(
+            format=",.0f", grid=True, gridColor="#E5E7EB", gridOpacity=.7,
+            labelColor="#6B7280", titleColor="#374151")),
+        color=alt.Color("mode_group:N", title="Mode",
+            scale=alt.Scale(range=["#3B82F6", "#10B981", "#F59E0B", "#6366F1"]),
+            legend=alt.Legend(orient="right", symbolType="circle"))
     )
 
-    line = alt.Chart(df).mark_line().encode(
-        x="year:O",
-        y=alt.Y(f"{value_column}:Q"),
-        color="mode_group:N",
-    )
-
-    selectors = (
-        alt.Chart(df)
-        .mark_point()
-        .encode(
-            x="year:O",
-            opacity=alt.value(0),
-        )
-        .add_params(nearest)
-    )
-
-    points = line.mark_point().encode(
+    selectors = base.mark_point().encode(x="year:O", opacity=alt.value(0)).add_params(nearest)
+    points = line.mark_point(size=80, filled=True, stroke="white", strokeWidth=1.5).encode(
         opacity=alt.when(nearest).then(alt.value(1)).otherwise(alt.value(0)),
-        tooltip=[
-            "year",
-            "mode_group",
-            alt.Tooltip(f"{value_column}:Q", format=","),
-        ],
-    )
-
-    rules = (
-        alt.Chart(df)
-        .mark_rule(color="gray")
-        .encode(x="year:O")
-        .transform_filter(nearest)
-    )
-
-    trend_chart = (
-        alt.layer(line, selectors, points, rules)
-        .properties(width=700, height=400)
-    )
-
-    return trend_chart
+        tooltip=[alt.Tooltip("year:O", title="Year"),
+                 alt.Tooltip("mode_group:N", title="Mode"),
+                 alt.Tooltip(f"{value_column}:Q", title=y_title, format=",.0f")])
+    rules = base.mark_rule(color="#D1D5DB", strokeDash=[4, 2]).encode(
+        x="year:O").transform_filter(nearest)
 
 
-def scatter_plot_regression(
-    df,
-    x_variable,
-    y_variable,
-    tooltip_columns=None,
-    chart_title=None
-):
+    return alt.layer(line, selectors, points, rules).properties(
+    width=400, height=300,
+    title=alt.TitleParams(text=title, fontSize=16, fontWeight=600,
+                          color="#111827", anchor="start", offset=12))
+
+
+
+
+
+def scatter_plot_regression(df, x_variable, y_variable, tooltip_columns=None, chart_title=None):
     """Creates a filtered scatter plot with a regression trend line."""
+    d = df[(df[x_variable] > 0) & (df[y_variable] > 0)].copy()
+    tooltip_columns = tooltip_columns or [x_variable, y_variable]
 
-    df_filtered = df[
-        (df[x_variable] > 0) & (df[y_variable] > 0)
-    ]
-
-    if tooltip_columns is None:
-        tooltip_columns = [x_variable, y_variable]
-
-    scatter = alt.Chart(df_filtered).mark_circle(
-        opacity=0.5
+    scatter = alt.Chart(d).mark_circle(
+        size=70, opacity=.55, color="#3B82F6", stroke="white", strokeWidth=1
     ).encode(
-        x=alt.X(x_variable + ":Q", title=x_variable),
-        y=alt.Y(y_variable + ":Q", title=y_variable),
+        x=alt.X(f"{x_variable}:Q", title=x_variable, axis=alt.Axis(
+            labelColor="#6B7280", titleColor="#374151", grid=True, gridColor="#E5E7EB", gridOpacity=.7)),
+        y=alt.Y(f"{y_variable}:Q", title=y_variable, axis=alt.Axis(
+            labelColor="#6B7280", titleColor="#374151", grid=True, gridColor="#E5E7EB", gridOpacity=.7)),
         tooltip=tooltip_columns
     )
 
-    trend = alt.Chart(df_filtered).transform_regression(
-        x_variable,
-        y_variable
-    ).mark_line(
-        color="darkblue",
-        size=3
-    ).encode(
-        x=x_variable + ":Q",
-        y=y_variable + ":Q"
-    )
+    trend = alt.Chart(d).transform_regression(x_variable, y_variable).mark_line(
+        color="#111827", size=2.5
+    ).encode(x=f"{x_variable}:Q", y=f"{y_variable}:Q")
 
-    compare_chart = (scatter + trend).properties(
-        width=300,
-        height=250,
-        title=chart_title
-    )
+    return (scatter + trend).properties(
+        width=500, height=350,
+        title=alt.TitleParams(text=chart_title, fontSize=16, fontWeight=600,
+                              color="#111827", anchor="start", offset=12)
+    ).configure_view(strokeWidth=0).configure_axis(
+        labelFont="Arial", titleFont="Arial"
+    ).configure_title(font="Arial")
 
-    return compare_chart
 
 
 def waffle_by_year(
@@ -528,3 +500,121 @@ def ridge_plot(
     )
 
     return chart
+
+
+def breakdown_chart(df, year, component_columns, group_column, year_column, normalize=True, title=None):
+    """
+    Creates a stacked bar chart showing the composition of a total
+    broken into components, by group. Amounts are displayed in millions.
+    """
+    plot_df = (df[df[year_column] == year].groupby(group_column)[component_columns].sum().reset_index()
+               .melt(id_vars=group_column, var_name="component", value_name="amount"))
+    plot_df["amount"] /= 1_000_000
+    plot_df["component"] = plot_df["component"].str.replace("_", " ", regex=False).str.title()
+
+    y_enc = alt.Y("amount:Q", stack="normalize" if normalize else True,
+                  axis=alt.Axis(format=".0%") if normalize else alt.Axis(format=",.1f"),
+                  title="Share of Total" if normalize else "Amount ($M)")
+
+    return alt.Chart(plot_df).mark_bar(cornerRadius=2).encode(
+        x=alt.X(f"{group_column}:N", title="Mode", axis=alt.Axis(labelAngle=0)),
+        y=y_enc,
+        color=alt.Color("component:N", title="Component",
+            scale=alt.Scale(scheme="pastel2"),
+            legend=alt.Legend(orient="bottom", direction="horizontal")),
+        tooltip=[
+            alt.Tooltip(f"{group_column}:N", title="Mode"),
+            alt.Tooltip("component:N", title="Component"),
+            alt.Tooltip("amount:Q", title="Amount ($M)", format=",.1f")
+        ]
+    ).properties(
+        width=500, height=350,
+        title=alt.TitleParams(
+            text=title or f"Composition by Mode, {year}",
+            fontSize=16, fontWeight=600, color="#111827", anchor="start"
+        )
+    )
+
+
+
+def plot_scorecard(df, metrics, group_column, titles=None, x_labels=None,
+                   main_title=None, subtitles=None, colors=None, formats=None,
+                   width=280, height=260):
+    """
+    Creates three side-by-side horizontal bar charts comparing
+    three metrics across groups.
+    """
+    titles = titles or metrics; x_labels = x_labels or metrics
+    subtitles = subtitles or [""] * len(metrics)
+    colors = colors or ["#3B82F6", "#10B981", "#F59E0B"]
+    formats = formats or [".2f"] * len(metrics); charts = []
+    order = df[group_column].drop_duplicates().tolist()
+
+    for metric, title, xlabel, subtitle, color, fmt in zip(metrics, titles, x_labels, subtitles, colors, formats):
+        d = df[[group_column, metric]].dropna().copy()
+        d["is_max"] = d[metric] == d[metric].max()
+
+        bars = alt.Chart(d).mark_bar(cornerRadiusEnd=6, height=28).encode(
+            x=alt.X(f"{metric}:Q", title=xlabel, axis=alt.Axis(
+                grid=True, gridColor="#E5E7EB", gridOpacity=.7, domain=False,
+                tickColor="#D1D5DB", labelColor="#6B7280", titleColor="#374151",
+                titleFontSize=12, labelFontSize=11, format=fmt)),
+            y=alt.Y(f"{group_column}:N", sort=order, title=None, axis=alt.Axis(
+                labelColor="#374151", labelFontSize=12, labelFontWeight=500,
+                ticks=False, domain=False)),
+            color=alt.condition(alt.datum.is_max, alt.value(color), alt.value("#D9E2EC")),
+            tooltip=[alt.Tooltip(f"{group_column}:N", title=group_column),
+                     alt.Tooltip(f"{metric}:Q", title=title, format=fmt)])
+
+        labels = alt.Chart(d).mark_text(
+            align="left", baseline="middle", dx=7, fontSize=12,
+            fontWeight="bold", color="#374151"
+        ).encode(x=f"{metric}:Q", y=alt.Y(f"{group_column}:N", sort=order),
+                 text=alt.Text(f"{metric}:Q", format=fmt))
+
+        charts.append((bars + labels).properties(
+            width=width, height=height,
+            title=alt.TitleParams(text=title, subtitle=subtitle, anchor="start",
+                fontSize=16, fontWeight=600, color="#111827",
+                subtitleFontSize=11, subtitleColor="#6B7280", offset=12)))
+
+    chart = alt.hconcat(*charts, spacing=35)
+    if main_title:
+        chart = chart.properties(title=alt.TitleParams(
+            text=main_title, anchor="start", fontSize=22, fontWeight="bold",
+            color="#111827", offset=20))
+
+    return chart.configure_view(strokeWidth=0).configure_axis(
+        labelFont="Arial", titleFont="Arial"
+    ).configure_title(font="Arial")
+
+    
+def grouped_scatter(df, x_variable, y_variable, group_column=None, size_column=None,
+                    label_column=None, tooltip_columns=None, x_title=None, y_title=None,
+                    chart_title=None):
+    """Creates a generic scatter plot with optional grouping, sizing, and labels."""
+    cols = [x_variable, y_variable] + [c for c in [group_column, size_column, label_column] if c]
+    d = df[cols].dropna().copy()
+    d = d[(d[x_variable] > 0) & (d[y_variable] > 0)]
+    tooltip_columns = tooltip_columns or cols
+
+    enc = {
+        "x": alt.X(f"{x_variable}:Q", title=x_title or x_variable.replace("_", " ").title(),
+                   axis=alt.Axis(labelColor="#6B7280", titleColor="#374151", grid=True, gridColor="#E5E7EB", gridOpacity=.7)),
+        "y": alt.Y(f"{y_variable}:Q", title=y_title or y_variable.replace("_", " ").title(),
+                   axis=alt.Axis(labelColor="#6B7280", titleColor="#374151", grid=True, gridColor="#E5E7EB", gridOpacity=.7)),
+        "tooltip": tooltip_columns
+    }
+    if group_column: enc["color"] = alt.Color(f"{group_column}:N", title=group_column.replace("_", " ").title())
+    if size_column: enc["size"] = alt.Size(f"{size_column}:Q", title=size_column.replace("_", " ").title(), scale=alt.Scale(range=[30, 800]))
+
+    return alt.Chart(d).mark_circle(
+        opacity=.8, stroke="white", strokeWidth=.7
+    ).encode(**enc).properties(
+        width=600, height=450,
+        title=alt.TitleParams(
+            text=chart_title, fontSize=16, fontWeight=600,
+            color="#111827", anchor="start"
+        )
+    )
+
