@@ -416,11 +416,13 @@ def plot_scorecard(df, metrics, group_column, titles=None, x_labels=None,
     ).configure_title(font="Arial")
 
     
-def grouped_scatter(df, x_variable, y_variable, group_column=None, size_column=None,
-                    label_column=None, tooltip_columns=None, x_title=None, y_title=None,
-                    chart_title=None):
-    """Creates a generic scatter plot with optional grouping, sizing, and labels."""
-    cols = [x_variable, y_variable] + [c for c in [group_column, size_column, label_column] if c]
+def grouped_scatter(
+    df, x_variable, y_variable, group_column=None, size_column=None,
+    label_column=None, year_column=None, tooltip_columns=None,
+    x_title=None, y_title=None, chart_title=None
+):
+    """Creates a generic scatter plot with optional grouping, sizing, labels, and year."""
+    cols = [x_variable, y_variable] + [c for c in [group_column, size_column, label_column, year_column] if c]
     d = df[cols].dropna().copy()
     d = d[(d[x_variable] > 0) & (d[y_variable] > 0)]
     tooltip_columns = tooltip_columns or cols
@@ -432,18 +434,16 @@ def grouped_scatter(df, x_variable, y_variable, group_column=None, size_column=N
                    axis=alt.Axis(labelColor="#6B7280", titleColor="#374151", grid=True, gridColor="#E5E7EB", gridOpacity=.7)),
         "tooltip": tooltip_columns
     }
-    if group_column: enc["color"] = alt.Color(f"{group_column}:N", title=group_column.replace("_", " ").title())
-    if size_column: enc["size"] = alt.Size(f"{size_column}:Q", title=size_column.replace("_", " ").title(), scale=alt.Scale(range=[30, 800]))
+    if group_column:
+        enc["color"] = alt.Color(f"{group_column}:N", title=group_column.replace("_", " ").title())
+    if size_column:
+        enc["size"] = alt.Size(f"{size_column}:Q", title=size_column.replace("_", " ").title(), scale=alt.Scale(range=[30, 800]))
 
-    return alt.Chart(d).mark_circle(
-        opacity=.8, stroke="white", strokeWidth=.7
-    ).encode(**enc).properties(
+    return alt.Chart(d).mark_circle(opacity=.8, stroke="white", strokeWidth=.7).encode(**enc).properties(
         width=600, height=450,
-        title=alt.TitleParams(
-            text=chart_title, fontSize=16, fontWeight=600,
-            color="#111827", anchor="start"
-        )
+        title=alt.TitleParams(text=chart_title, fontSize=16, fontWeight=600, color="#111827", anchor="start")
     )
+
 
 def efficiency_matrix(
     df, metrics, group_column, year_column=None, year=None,
