@@ -87,145 +87,67 @@ def scatter_plot_regression(df, x_variable, y_variable, tooltip_columns=None, ch
 
 
 def waffle_by_year(
-    df,
-    value_column,
-    category_column,
-    year_column,
-    years=None,
-    palette="CrystalGems",
-    shuffle=9,
-    rows=50,
-    columns=10
+    df, value_column, category_column, year_column, years=None,
+    palette="CrystalGems", shuffle=9, rows=50, columns=10
 ):
-    """
-    Creates waffle charts showing category values across selected years.
-
-    Parameters:
-        df: DataFrame containing the data.
-        value_column: Numeric column used to determine waffle sizes (eg: upt)
-        category_column: Column defining the categories shown in the waffle (eg: mode)
-        year_column: Column defining the time periods shown as separate waffles
-        years: Optional list of years to include.
-        palette: Color palette used for the categories.
-        shuffle: Controls the ordering of colors in the palette.
-        rows: Number of rows of squares in each waffle.
-        columns: Number of columns of squares in each waffle.
-    """
-    df_plot = df.copy()
-
+    """Creates waffle charts showing category values across selected years."""
+    d = df.copy()
     if years is not None:
-        df_plot = df_plot[df_plot[year_column].isin(years)]
+        d = d[d[year_column].isin(years)]
 
-    df_plot = (
-        df_plot
-        .groupby([year_column, category_column], as_index=False)[value_column]
-        .sum()
-    )
+    d = (d.groupby([year_column, category_column], as_index=False)[value_column]
+           .sum())
 
-    all_years = df_plot[year_column].unique()
-    all_categories = df_plot[category_column].unique()
+    all_years = d[year_column].unique()
+    all_categories = d[category_column].unique()
 
     idx = pd.MultiIndex.from_product(
         [all_years, all_categories],
         names=[year_column, category_column]
     )
-
-    df_plot = (
-        df_plot
-        .set_index([year_column, category_column])
-        .reindex(idx, fill_value=0)
-        .reset_index()
-        .sort_values([year_column, category_column])
-    )
-
-    n_colors = len(all_categories)
+    d = (d.set_index([year_column, category_column])
+           .reindex(idx, fill_value=0)
+           .reset_index()
+           .sort_values([year_column, category_column]))
 
     colors = load_palette(
-        palette,
-        keep_first_n=n_colors,
-        shuffle=shuffle
+        palette, keep_first_n=len(all_categories), shuffle=shuffle
     ) + ["white"]
 
-    max_year_value = (
-        df_plot[
-            df_plot[year_column] == all_years.max()
-        ][value_column].sum()
-    )
-
-    ncols = len(all_years)
-
-    fig, axs = plt.subplots(
-        ncols=ncols,
-        figsize=(14, 8)
-    )
-
-    if ncols == 1:
-        axs = [axs]
+    max_value = d.loc[d[year_column] == all_years.max(), value_column].sum()
+    fig, axs = plt.subplots(ncols=len(all_years), figsize=(14, 8))
+    axs = [axs] if len(all_years) == 1 else axs
 
     for year, ax in zip(sorted(all_years), axs):
-        values = list(
-            df_plot[
-                df_plot[year_column] == year
-            ][value_column].values
+        values = sorted(
+            d.loc[d[year_column] == year, value_column].tolist(),
+            reverse=True
         )
-
-        values = sorted(values, reverse=True)
-
-        values.append(
-            max_year_value - sum(values)
-        )
+        values.append(max_value - sum(values))
 
         Waffle.make_waffle(
-            ax=ax,
-            rows=rows,
-            columns=columns,
-            values=values,
-            vertical=True,
-            colors=colors
+            ax=ax, rows=rows, columns=columns, values=values,
+            vertical=True, colors=colors
         )
-
         ax.yaxis.set_visible(True)
-        ax.set_yticks(ax.get_yticks())
-
-        ax.text(
-            x=0.1,
-            y=-0.04,
-            s=str(int(year)),
-            fontsize=14,
-            ha="center"
-        )
+        ax.text(0.1, -0.04, str(int(year)), fontsize=14, ha="center")
 
     from matplotlib.patches import Patch
-
     plt.legend(
-        handles=[
-            Patch(
-                color=colors[i],
-                label=category
-            )
-            for i, category in enumerate(all_categories)
-        ],
-        bbox_to_anchor=(1.05, 1),
-        loc="upper left"
+        handles=[Patch(color=colors[i], label=cat)
+                 for i, cat in enumerate(all_categories)],
+        bbox_to_anchor=(1.05, 1), loc="upper left"
     )
-
     plt.tight_layout()
     return fig
 
 
+
 def before_after_trail(
-    df,
-    value_column,
-    category_column,
-    group_column,
-    year_column="year",
-    start_year=2021,
-    end_year=2024,
-    selected_groups=None,
-    chart_title=None,
-    change_label="Change (%)",
-    width=200,
-    height=400
+    df, value_column, category_column, group_column,
+    year_column="year", start_year=2021, end_year=2024,
+    selected_groups=None, chart_title=None, change_label="Change (%)",
+    width=200, height=400
 ):
     """
     Creates a before-and-after trail chart comparing a value across two years.
@@ -239,52 +161,37 @@ def before_after_trail(
         start_year: Earlier year in the comparison.
         end_year: Later year in the comparison.
         selected_groups: Optional list of groups to include.
-        chart_title: Optional title for the chart.
+        chart_title: Optional chart title.
         change_label: Label for the color legend.
         width: Width of each chart panel.
         height: Height of each chart panel.
     """
-    df_plot = df.copy()
-
+    d = df.copy()
     if selected_groups is not None:
-        df_plot = df_plot[
-            df_plot[group_column].isin(selected_groups)
-        ]
+        d = d[d[group_column].isin(selected_groups)]
 
-    chart = (
-        alt.Chart(
-            df_plot,
-            title=chart_title
-        )
+    return (
+        alt.Chart(d, title=chart_title)
         .mark_trail()
         .encode(
-            x=alt.X(year_column + ":O")
-                .title(None),
-            y=alt.Y(category_column + ":N")
-                .title(None),
-            size=alt.Size(value_column + ":Q")
+            x=alt.X(f"{year_column}:O").title(None),
+            y=alt.Y(f"{category_column}:N").title(None),
+            size=alt.Size(f"{value_column}:Q")
                 .scale(range=[5, 20])
                 .title(value_column),
             color=alt.Color("delta:Q")
-                .scale(
-                    domainMid=0,
-                    range=["maroon", "lightgray", "blue"]
-                )
+                .scale(domainMid=0, range=["maroon", "lightgray", "blue"])
                 .title(change_label),
             tooltip=[
-                alt.Tooltip(year_column + ":O", title="Year"),
-                alt.Tooltip(value_column + ":Q", title=value_column)
+                alt.Tooltip(f"{year_column}:O", title="Year"),
+                alt.Tooltip(f"{value_column}:Q", title=value_column)
             ],
-            column=alt.Column(group_column + ":N")
-                .title(group_column)
+            column=alt.Column(f"{group_column}:N").title(group_column)
         )
         .transform_pivot(
             pivot=year_column,
             value=value_column,
-            groupby=[
-                category_column,
-                group_column
-            ]
+            groupby=[category_column, group_column]
         )
         .transform_calculate(
             delta=f"datum['{end_year}'] - datum['{start_year}']"
@@ -293,20 +200,11 @@ def before_after_trail(
             [str(start_year), str(end_year)],
             as_=["year", value_column]
         )
-        .properties(
-            width=width,
-            height=height
-        )
-        .configure_legend(
-            orient="bottom",
-            direction="horizontal"
-        )
-        .configure_view(
-            stroke=None
-        )
+        .properties(width=width, height=height)
+        .configure_legend(orient="bottom", direction="horizontal")
+        .configure_view(stroke=None)
     )
 
-    return chart
 
 
 def percent_stacked_bar(
