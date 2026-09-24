@@ -109,40 +109,23 @@ def calculate_shares(df, total_col, source_cols, suffix):
     return df
 
 def get_annual_average_cpi(start_year, end_year):
-    """Fetch BLS CPI data and calculate the annual average CPI."""
-
+    """Fetch BLS CPI data, calculate annual averages, and save to GCS_FILE_PATH."""
     url = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
+    payload = {"seriesid": ["CUUR0000SA0"], "startyear": str(start_year), "endyear": str(end_year)}
 
-    payload = {
-        "seriesid": ["CUUR0000SA0"],
-        "startyear": str(start_year),
-        "endyear": str(end_year)
-    }
-
-    response = requests.post(url, json=payload)
-    response.raise_for_status()
-
+    response = requests.post(url, json=payload); response.raise_for_status()
     data = response.json()
-    cpi_data = data["Results"]["series"][0]["data"]
+    if data.get("status") != "REQUEST_SUCCEEDED": raise ValueError(f"BLS API error: {data}")
 
-    # Convert API response to DataFrame
-    cpi = pd.DataFrame(cpi_data)
-
-    # Convert columns to numeric
-    cpi["year"] = pd.to_numeric(cpi["year"])
-    cpi["value"] = pd.to_numeric(cpi["value"])
-
-    # Keep monthly observations only
+    cpi = pd.DataFrame(data["Results"]["series"][0]["data"])
+    cpi["year"] = pd.to_numeric(cpi["year"]); cpi["value"] = pd.to_numeric(cpi["value"])
     cpi = cpi[cpi["period"].str.startswith("M")]
+    cpi_annual = cpi.groupby("year", as_index=False)["value"].mean().rename(columns={"value": "cpi"})
 
-    # Calculate annual average CPI
-    cpi_annual = (
-        cpi.groupby("year", as_index=False)["value"]
-           .mean()
-           .rename(columns={"value": "cpi"})
-    )
-
+    cpi_annual.to_csv(f"{GCS_FILE_PATH}cpi_annual.csv", index=False)
     return cpi_annual
+
+
 
 def add_real_values(df, value_cols, cpi_annual, base_cpi):
     """
@@ -248,3 +231,62 @@ def aggregate_opex_to_agency_year(df):
     return df_agency
 
 
+
+def compute_hhi(
+    df,
+    component_columns,
+    group_column,
+    year_column
+):
+    """
+    Calculates spending concentration by group and year based on
+    the distribution of spending across component categories.
+    """
+    grouped = (
+        df.groupby([year_column, group_column])[component_columns]
+        .sum()
+        .reset_index()
+    )
+
+    component_total = grouped[component_columns].sum(axis=1)
+
+    shares = grouped[component_columns].div(
+        component_total,
+        axis=0
+    )
+
+    grouped["hhi"] = shares.pow(2).sum(axis=1)
+
+    return grouped[[year_column, group_column, "hhi"]]
+
+
+
+
+def spending_per_capita(df, value_column, population_column, group_column, year_column):
+    grouped = (df.groupby([year_column, group_column])
+               .agg(value=(value_column, "sum"), population=(population_column, "sum"))
+               .reset_index())
+    grouped["per_capita"] = grouped["value"] / grouped["population"]
+    return grouped
+
+
+
+def spending_volatility(
+    df, value_column, group_column, year_column, target_year
+):
+    trend = (
+        df.groupby([year_column, group_column])[value_column]
+        .sum()
+        .reset_index()
+        .sort_values([group_column, year_column])
+    )
+
+    trend["yoy_change"] = (
+        trend.groupby(group_column)[value_column].pct_change()
+    )
+
+    result = trend[trend[year_column] == target_year].copy()
+
+    result["volatility"] = result["yoy_change"].abs()
+
+    return result[[group_column, "volatility"]]
