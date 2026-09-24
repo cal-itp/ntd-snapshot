@@ -375,20 +375,9 @@ def percent_stacked_bar(
 
 
 def ridge_plot(
-    df,
-    value_column,
-    category_column,
-    year_column=None,
-    year=None,
-    filters=None,
-    value_min=None,
-    value_max=None,
-    step=30,
-    overlap=1.5,
-    chart_title=None,
-    chart_subtitle=None,
-    x_title=None,
-    category_title=None
+    df, value_column, category_column, year_column=None, year=None,
+    filters=None, value_min=None, value_max=None, step=30, overlap=1.5,
+    chart_title=None, chart_subtitle=None, x_title=None, category_title=None
 ):
     """
     Creates a ridge plot showing the distribution of a numeric variable
@@ -396,11 +385,11 @@ def ridge_plot(
 
     Parameters:
         df: DataFrame containing the data.
-        value_column: Numeric column whose distribution is shown (e.g., "farebox_recovery_ratio").
-        category_column: Column defining the groups shown as separate ridges (e.g., "mode_full_name").
-        year_column: Time variable used to filter the data (e.g., "year").
+        value_column: Numeric variable whose distribution is shown.
+        category_column: Column defining the groups shown as ridges.
+        year_column: Time variable used to filter the data.
         year: Specific year to include.
-        filters: Optional dictionary of column-value pairs used to filter data.
+        filters: Optional dictionary of column-value pairs for filtering.
         value_min: Optional minimum value to include.
         value_max: Optional maximum value to include.
         step: Height of each ridge.
@@ -408,98 +397,38 @@ def ridge_plot(
         chart_title: Optional chart title.
         chart_subtitle: Optional chart subtitle.
         x_title: Optional x-axis title.
-        category_title: Optional category legend title.
+        category_title: Optional category label title.
     """
-    df_plot = df.copy()
+    d = df.copy()
+    if year_column and year is not None: d = d[d[year_column] == year]
+    if filters:
+        for col, vals in filters.items():
+            d = d[d[col].isin(vals)] if isinstance(vals, list) else d[d[col] == vals]
+    d = d[d[value_column].notna()]
+    if value_min is not None: d = d[d[value_column] >= value_min]
+    if value_max is not None: d = d[d[value_column] <= value_max]
 
-    if year_column is not None and year is not None:
-        df_plot = df_plot[df_plot[year_column] == year]
-
-    if filters is not None:
-        for column, values in filters.items():
-            if isinstance(values, list):
-                df_plot = df_plot[df_plot[column].isin(values)]
-            else:
-                df_plot = df_plot[df_plot[column] == values]
-
-    df_plot = df_plot[
-        df_plot[value_column].notna()
-    ]
-
-    if value_min is not None:
-        df_plot = df_plot[df_plot[value_column] >= value_min]
-
-    if value_max is not None:
-        df_plot = df_plot[df_plot[value_column] <= value_max]
-
-    chart = (
-        alt.Chart(df_plot, width=800, height=step)
-        .transform_density(
-            value_column,
-            groupby=[category_column],
-            as_=[value_column, "density"]
-        )
-        .mark_area(
-            interpolate="monotone",
-            fillOpacity=0.8,
-            stroke="white",
-            strokeWidth=0.5
-        )
+    return (
+        alt.Chart(d, width=800, height=step)
+        .transform_density(value_column, groupby=[category_column], as_=[value_column, "density"])
+        .mark_area(interpolate="monotone", fillOpacity=0.8, stroke="white", strokeWidth=0.5)
         .encode(
-            x=alt.X(
-                value_column + ":Q",
-                title=x_title or value_column
-            ),
-            y=alt.Y(
-                "density:Q",
-                axis=None,
-                scale=alt.Scale(
-                    range=[step, -step * overlap]
-                )
-            ),
-            color=alt.Color(
-                category_column + ":N",
-                title=category_title or category_column
-            ),
+            x=alt.X(f"{value_column}:Q", title=x_title or value_column),
+            y=alt.Y("density:Q", axis=None, scale=alt.Scale(range=[step, -step * overlap])),
+            color=alt.Color(f"{category_column}:N", title=category_title or category_column),
             tooltip=[
-                alt.Tooltip(
-                    category_column + ":N",
-                    title=category_title or category_column
-                ),
-                alt.Tooltip(
-                    value_column + ":Q",
-                    title=x_title or value_column,
-                    format=".3f"
-                ),
-                alt.Tooltip(
-                    "density:Q",
-                    title="Density",
-                    format=".3f"
-                )
+                alt.Tooltip(f"{category_column}:N", title=category_title or category_column),
+                alt.Tooltip(f"{value_column}:Q", title=x_title or value_column, format=".3f"),
+                alt.Tooltip("density:Q", title="Density", format=".3f")
             ]
         )
-        .facet(
-            row=alt.Row(
-                category_column + ":N",
-                title=None,
-                header=alt.Header(
-                    labelAngle=0,
-                    labelAlign="left"
-                )
-            )
-        )
-        .properties(
-            title=alt.TitleParams(
-                text=chart_title,
-                subtitle=chart_subtitle
-            ),
-            bounds="flush"
-        )
+        .facet(row=alt.Row(f"{category_column}:N", title=None,
+                           header=alt.Header(labelAngle=0, labelAlign="left")))
+        .properties(title=alt.TitleParams(text=chart_title, subtitle=chart_subtitle), bounds="flush")
         .configure_facet(spacing=0)
         .configure_view(stroke=None)
     )
 
-    return chart
 
 
 def breakdown_chart(df, year, component_columns, group_column, year_column, normalize=True, title=None):
@@ -616,5 +545,119 @@ def grouped_scatter(df, x_variable, y_variable, group_column=None, size_column=N
             text=chart_title, fontSize=16, fontWeight=600,
             color="#111827", anchor="start"
         )
+    )
+
+def efficiency_matrix(
+    df, metrics, group_column, year_column=None, year=None,
+    titles=None, normalize="zscore", chart_title=None,
+    color_scheme="redblue", reverse_scale=False, width=500, height=300
+):
+    """
+    Heatmap matrix (mode × metric) with independently normalized metrics.
+
+    reverse_scale can be:
+        - bool: same direction for all metrics
+        - list of bools: one flag per metric, e.g. [False, True, True]
+    """
+    df_plot = df.copy()
+    if year_column is not None and year is not None:
+        df_plot = df_plot[df_plot[year_column] == year]
+
+    titles = titles or metrics
+    if len(titles) != len(metrics):
+        raise ValueError("titles must have the same length as metrics.")
+
+    if isinstance(reverse_scale, bool):
+        reverse_flags = [reverse_scale] * len(metrics)
+    else:
+        reverse_flags = list(reverse_scale)
+        if len(reverse_flags) != len(metrics):
+            raise ValueError("reverse_scale must have one value per metric.")
+
+    agg = df_plot.groupby(group_column, as_index=False)[metrics].mean()
+    long = agg.melt(
+        id_vars=group_column, value_vars=metrics,
+        var_name="metric", value_name="raw_value"
+    )
+
+    if normalize == "zscore":
+        long["norm_value"] = long.groupby("metric")["raw_value"].transform(
+            lambda x: (x - x.mean()) / x.std()
+        )
+        legend_title = ["Std. deviations", "from mode average"]
+        subtitle = "Each column standardized separately (z-score) — compare within a column, not across columns"
+    elif normalize == "percent_of_max":
+        long["norm_value"] = long.groupby("metric")["raw_value"].transform(
+            lambda x: x / x.max() * 100
+        )
+        legend_title = ["% of highest", "value in column"]
+        subtitle = "Each column scaled to % of that column's max — compare within a column, not across columns"
+    else:
+        raise ValueError("normalize must be 'zscore' or 'percent_of_max'.")
+
+    reverse_map = dict(zip(metrics, reverse_flags))
+    long["norm_value"] *= long["metric"].map(reverse_map).map({True: -1, False: 1})
+
+    long["metric_label"] = long["metric"].map(dict(zip(metrics, titles)))
+
+    return (
+        alt.Chart(long)
+        .mark_rect(stroke="white", strokeWidth=2)
+        .encode(
+            x=alt.X("metric_label:N", title=None, sort=titles,
+                    axis=alt.Axis(labelAngle=0)),
+            y=alt.Y(f"{group_column}:N", title=None),
+            color=alt.Color(
+                "norm_value:Q", title=legend_title,
+                scale=alt.Scale(scheme=color_scheme, domainMid=0)
+            ),
+            tooltip=[
+                alt.Tooltip(f"{group_column}:N", title="Mode"),
+                alt.Tooltip("metric_label:N", title="Metric"),
+                alt.Tooltip("raw_value:Q", title="Value", format=",.2f")
+            ]
+        )
+        .properties(
+            width=width, height=height,
+            title=alt.TitleParams(
+                text=chart_title, subtitle=subtitle,
+                fontSize=16, fontWeight=600, color="#111827", anchor="start",
+                subtitleFontSize=11, subtitleColor="#6B7280"
+            )
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axis(labelFont="Arial", titleFont="Arial")
+        .configure_title(font="Arial")
+    )
+
+def indexed_scissors(df, group_column, time_column, variable_columns, base_year,
+                     variable_labels=None, colors=None, chart_title=None, chart_subtitle=None):
+    """Creates an indexed line chart comparing variables to a base year."""
+    labels = variable_labels or {c: c.replace("_", " ").title() for c in variable_columns}
+    d = df[[group_column, time_column] + variable_columns].dropna()
+    d = d.groupby([group_column, time_column], as_index=False)[variable_columns].sum()
+
+    base = d[d[time_column] == base_year].rename(columns={c: f"{c}_base" for c in variable_columns})
+    d = d.merge(base[[group_column] + [f"{c}_base" for c in variable_columns]], on=group_column)
+    for c in variable_columns:
+        d[f"{c}_index"] = d[c] / d[f"{c}_base"] * 100
+
+    long = d.melt([group_column, time_column], [f"{c}_index" for c in variable_columns],
+                  var_name="metric", value_name="index")
+    long["metric"] = long["metric"].map({f"{c}_index": labels[c] for c in variable_columns})
+
+    return (
+        alt.Chart(long).mark_line(point=True, strokeWidth=2.5).encode(
+        x=alt.X(f"{time_column}:O", title=time_column.replace("_", " ").title()),
+        y=alt.Y("index:Q", title=f"Index ({base_year} = 100)"),
+        color=alt.Color("metric:N", title=None,
+                        scale=alt.Scale(domain=list(labels.values()), range=colors) if colors else None),
+        detail="metric:N",
+        tooltip=[group_column, time_column, "metric", alt.Tooltip("index:Q", format=".1f")]
+    ).properties(width=250, height=180)
+     .facet(f"{group_column}:N", columns=3, title=None)
+     .properties(title=alt.TitleParams(text=chart_title, subtitle=chart_subtitle,
+                                       fontSize=18, fontWeight=600, anchor="start"))
+     .configure_view(strokeWidth=0)
     )
 
