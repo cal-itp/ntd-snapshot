@@ -9,6 +9,8 @@ Mode report provides a mode-level overview of transit spending, service delivery
 - These two stacked bar charts show the **composition of transit expenditures by mode in 2024**. The first chart breaks down **operating expenditures** into vehicle operations, vehicle maintenance, non-vehicle maintenance, and general administration, while the second shows **capital expenditures** divided into rolling stock, facilities, and other expenditures. Since the bars are normalized, the charts emphasize the **percentage share of each spending component within each mode**, making it easier to compare how different transit modes allocate their operating and capital spending.
 
 ## 2. Efficiency/ Performance
+Efficiency and performance evaluate how transit modes use their operating and capital resources. The analysis looks at spending concentration, spending per capita, and year-to-year spending volatility, while also comparing operating costs per vehicle revenue hour, vehicle revenue mile, and passenger trip. Together, these measures show how much agencies spend, how consistently they spend, and how efficiently spending is translated into transit service and passenger trips.
+
 ### 2.1 Mode Performance (HHI, Spending Per Capita and Volatility)
 The OPEX scorecard helps describe how each transit mode's operating spending is distributed, scaled relative to population, and changing over time. The CAPEX scorecard applies the same framework to capital investment. Together, the two scorecards provide a compact view of differences in spending concentration, spending intensity, and year-to-year stability across transit modes.
 
@@ -30,6 +32,8 @@ This heatmap compares the operating cost efficiency of different transit modes i
 
 
 ## 3. Cost-effectiveness
+Cost-effectiveness examines how effectively transit modes generate fare revenue relative to their operating costs. It uses farebox recovery, fare revenue per passenger trip, and net subsidy per trip to show how much of the cost is supported by fares and how much subsidy is required. The indexed comparison of operating costs and fare revenue from 2019 onward also shows whether expenses and fare revenue have grown at similar or different rates over time.
+
 ### 3.1 Farebox Recovery Ratio by Mode
 This plot shows the distribution of Farebox Recovery Ratio across different transit modes in California in 2024. Farebox Recovery Ratio measures the share of operating expenses covered by fare revenue. A higher ratio means fares cover a larger portion of operating costs. The distributions can be compared across modes based on their location and shape, showing whether a mode tends to have higher or lower farebox recovery ratios and whether recovery ratios vary more or less across agencies. Because this is a density plot, the height of one ridge should not be interpreted as indicating that one mode has more agencies than another. Instead, density is normalized within each mode to show the concentration and shape of the distribution.
 
@@ -56,6 +60,8 @@ The chart shows relative growth, not the actual dollar difference between operat
 
 
 ## 4. Service Effectiveness
+Service effectiveness focuses on how efficiently transit resources are converted into passenger service and how intensively the fleet is used. By comparing operating costs with passenger trips per vehicle mile and hour, the analysis shows the relationship between service costs and passenger utilization. Fleet utilization and operating speed provide additional insight into how intensively vehicles are used and how quickly service is delivered.
+
 ### 4.1 Operating Efficiency: Cost vs. Service Utilization and Service Intensity
 This set of scatter plots examines the relationship between operating cost and passenger service utilization across transit modes. Two measures of transit service are used: Vehicle Revenue Miles (VRM) and Vehicle Revenue Hours (VRH). The log transformation is used to make differences across agencies and modes easier to visualize when the values vary substantially in scale. Each point represents an agency-mode observation, with color identifying the transit mode and point size representing passenger trips. Observations toward the upper-right have both higher cost per unit of service and higher passenger utilization per unit of service. Observations toward the lower-left have lower values for both measures.
 

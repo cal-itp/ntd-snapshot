@@ -1,7 +1,7 @@
 import gcsfs
 import geopandas as gpd
 import pandas as pd
-from exploratory._utils import GCS_FILE_PATH
+from _utils import GCS_FILE_PATH
 import requests
 from google.cloud import bigquery
 import numpy as np
