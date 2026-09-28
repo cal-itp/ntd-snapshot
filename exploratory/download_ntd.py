@@ -12,7 +12,8 @@ https://googleapis.dev/python/pandas-gbq/latest/reading.html
 """
 
 import gcsfs
-from _utils import GCS_FILE_PATH
+from exploratory._utils import GCS_FILE_PATH
+
 from google.cloud import bigquery
 
 def download_annual_service_and_opex(

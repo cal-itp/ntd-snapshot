@@ -1,9 +1,10 @@
 import gcsfs
 import geopandas as gpd
 import pandas as pd
-from _utils import GCS_FILE_PATH
+from exploratory._utils import GCS_FILE_PATH
 import requests
 from google.cloud import bigquery
+import numpy as np
 filesystem = gcsfs.GCSFileSystem()
 
 
@@ -26,6 +27,18 @@ def load_capex():
     filesystem = gcsfs.GCSFileSystem()
     return pd.read_parquet(
         f"{GCS_FILE_PATH}capital_expenditures.parquet",
+        filesystem=filesystem,
+    )
+
+def load_mode_report_capex():
+    return pd.read_parquet(
+        f"{GCS_FILE_PATH}mode_report_capex.parquet",
+        filesystem=filesystem,
+    )
+
+def load_mode_report_opex():
+    return pd.read_parquet(
+        f"{GCS_FILE_PATH}mode_report_opex.parquet",
         filesystem=filesystem,
     )
 
@@ -63,6 +76,8 @@ def add_mode_group(df):
     )
 
     return df
+
+
 
 
 def round_tooltip_columns(df):
@@ -131,21 +146,23 @@ def add_real_values(df, value_cols, cpi_annual, base_cpi):
     """
     Merge annual CPI and calculate values in 2024 real dollars.
 
-    value_cols: dictionary of {nominal_column: real_column}
+    value_cols: list of nominal columns to convert to real dollars.
     """
 
     df = df.merge(
         cpi_annual,
         on="year",
-        how="left"
+        how="left",
     )
 
-    for value_col, real_col in value_cols.items():
+    for value_col in value_cols:
+        real_col = f"{value_col}_real"
         df[real_col] = (
             df[value_col] * base_cpi / df["cpi"]
         ).round(2)
 
     return df
+
 
 
 def aggregate_capex_to_agency_year(df):
@@ -290,3 +307,115 @@ def spending_volatility(
     result["volatility"] = result["yoy_change"].abs()
 
     return result[[group_column, "volatility"]]
+
+
+# ---------------------------------------------------------------------
+# Mode report
+# ---------------------------------------------------------------------
+
+def create_mode_report_data():
+    df_capex = add_mode_group(subset_california(load_capex()))
+    df_opex = add_mode_group(subset_california(load_service_and_opex()))
+
+    # Convert nominal values to 2024 dollars
+    cpi_annual = get_annual_average_cpi(2015, 2024)
+    base_cpi = cpi_annual.loc[cpi_annual["year"] == 2024, "cpi"].iloc[0]
+
+    df_capex = add_real_values(
+        df_capex,
+        ["total_capital_expenditures", "rolling_stock_expenditures",
+         "facilities_expenditures", "other_expenditures"],
+        cpi_annual, base_cpi,
+    )
+
+    df_opex = add_real_values(
+        df_opex,
+        ["operating_expenses_total", "operating_expenses_vehicle_operations",
+         "operating_expenses_vehicle_maintenance",
+         "operating_expenses_nonvehicle_maintenance",
+         "operating_expenses_general_administration", "fare_revenue",
+         "opex_per_vrm", "opex_per_vrh", "opex_per_upt"],
+        cpi_annual, base_cpi,
+    )
+
+
+    # Calculate efficiency metrics
+    df_opex["trips_per_vrm"] = (
+        df_opex["unlinked_passenger_trips"] / df_opex["vehicle_revenue_miles"]
+    )
+    df_opex["log_opex_vrm"] = np.log10(
+        df_opex["opex_per_vrm_real"].where(df_opex["opex_per_vrm_real"] > 0)
+    )
+    df_opex["log_trips_vrm"] = np.log10(
+        df_opex["trips_per_vrm"].where(df_opex["trips_per_vrm"] > 0)
+    )
+    
+    df_opex["trips_per_vrh"] = (
+        df_opex["unlinked_passenger_trips"] / df_opex["vehicle_revenue_hours"]
+    )
+    df_opex["log_opex_vrh"] = np.log10(
+        df_opex["opex_per_vrh_real"].where(df_opex["opex_per_vrh_real"] > 0)
+    )
+    df_opex["log_trips_vrh"] = np.log10(
+        df_opex["trips_per_vrh"].where(df_opex["trips_per_vrh"] > 0)
+    )
+
+    # Cost Effectivenesss Metrics
+    df_opex["fare_revenue_per_trip"] = (
+        df_opex["fare_revenue"] / df_opex["unlinked_passenger_trips"]
+    )
+    
+    df_opex["subsidy_per_trip"] = (
+        df_opex["operating_expenses_total"] - df_opex["fare_revenue"]
+    ) / df_opex["unlinked_passenger_trips"]
+
+
+
+    # Calculate HHI, spending per capita, and volatility
+    opex_hhi = compute_hhi(
+        df_opex,
+        ["operating_expenses_vehicle_operations_real",
+         "operating_expenses_vehicle_maintenance_real",
+         "operating_expenses_nonvehicle_maintenance_real",
+         "operating_expenses_general_administration_real"],
+        "mode_group", "year",
+    )
+    capex_hhi = compute_hhi(
+        df_capex,
+        ["rolling_stock_expenditures_real", "facilities_expenditures_real",
+         "other_expenditures_real"],
+        "mode_group", "year",
+    )
+
+    opex_pc = spending_per_capita(
+        df_opex, "operating_expenses_total_real",
+        "uza_population", "mode_group", "year"
+    )
+    capex_pc = spending_per_capita(
+        df_capex, "total_capital_expenditures_real",
+        "uza_population", "mode_group", "year"
+    )
+
+    opex_vol = spending_volatility(
+        df_opex, "operating_expenses_total_real", "mode_group", "year", 2024
+    )
+    capex_vol = spending_volatility(
+        df_capex, "total_capital_expenditures_real", "mode_group", "year", 2024
+    )
+
+    for metrics in [opex_hhi, opex_pc]:
+        df_opex = df_opex.merge(metrics, on=["year", "mode_group"], how="left")
+    df_opex = df_opex.merge(opex_vol, on="mode_group", how="left")
+
+    for metrics in [capex_hhi, capex_pc]:
+        df_capex = df_capex.merge(metrics, on=["year", "mode_group"], how="left")
+    df_capex = df_capex.merge(capex_vol, on="mode_group", how="left")
+
+    return df_capex, df_opex
+
+
+if __name__ == "__main__":
+    df_capex, df_opex = create_mode_report_data()
+    export_to_gcs(df_capex, "mode_report_capex", filesystem)
+    export_to_gcs(df_opex, "mode_report_opex", filesystem)
+
