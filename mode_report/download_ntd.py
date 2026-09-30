@@ -12,13 +12,19 @@ https://googleapis.dev/python/pandas-gbq/latest/reading.html
 """
 
 import gcsfs
-from _utils import GCS_FILE_PATH
+from exploratory._utils import GCS_FILE_PATH
 from google.cloud import bigquery
+
 
 def download_annual_service_and_opex(
     client: bigquery.Client,
     filesystem: gcsfs.GCSFileSystem,
+    min_year: int = 2015,
+    state: list[str] | None = None,
 ) -> None:
+    if state is None:
+        state = ["CA", "OR", "AZ", "NV"]
+
     query = """
         SELECT *
         FROM `cal-itp-data-infra.mart_ntd_funding_and_expenses.fct_service_data_and_operating_expenses_time_series_by_mode`
@@ -28,10 +34,8 @@ def download_annual_service_and_opex(
 
     query_config = bigquery.QueryJobConfig(
         query_parameters=[
-            bigquery.ScalarQueryParameter("year", "INT64", 2015),
-            bigquery.ArrayQueryParameter(
-                "state", "STRING", ["CA", "OR", "AZ", "NV"]
-            ),
+            bigquery.ScalarQueryParameter("year", "INT64", min_year),
+            bigquery.ArrayQueryParameter("state", "STRING", state),
         ]
     )
 
@@ -49,7 +53,12 @@ def download_annual_service_and_opex(
 def download_operating_and_capital_funding(
     client: bigquery.Client,
     filesystem: gcsfs.GCSFileSystem,
+    min_year: int = 2015,
+    state: list[str] | None = None,
 ) -> None:
+    if state is None:
+        state = ["CA", "OR", "AZ", "NV"]
+
     query = """
         SELECT *
         FROM `cal-itp-data-infra.mart_ntd_funding_and_expenses.fct_operating_and_capital_funding_time_series`
@@ -59,10 +68,8 @@ def download_operating_and_capital_funding(
 
     query_config = bigquery.QueryJobConfig(
         query_parameters=[
-            bigquery.ScalarQueryParameter("year", "INT64", 2015),
-            bigquery.ArrayQueryParameter(
-                "state", "STRING", ["CA", "OR", "AZ", "NV"]
-            ),
+            bigquery.ScalarQueryParameter("year", "INT64", min_year),
+            bigquery.ArrayQueryParameter("state", "STRING", state),
         ]
     )
 
@@ -80,7 +87,12 @@ def download_operating_and_capital_funding(
 def download_capital_expenditures(
     client: bigquery.Client,
     filesystem: gcsfs.GCSFileSystem,
+    min_year: int = 2015,
+    state: list[str] | None = None,
 ) -> None:
+    if state is None:
+        state = ["CA", "OR", "AZ", "NV"]
+
     query = """
         SELECT *
         FROM `cal-itp-data-infra.mart_ntd_funding_and_expenses.fct_capital_expenditures_time_series`
@@ -90,10 +102,8 @@ def download_capital_expenditures(
 
     query_config = bigquery.QueryJobConfig(
         query_parameters=[
-            bigquery.ScalarQueryParameter("year", "INT64", 2015),
-            bigquery.ArrayQueryParameter(
-                "state", "STRING", ["CA", "OR", "AZ", "NV"]
-            ),
+            bigquery.ScalarQueryParameter("year", "INT64", min_year),
+            bigquery.ArrayQueryParameter("state", "STRING", state),
         ]
     )
 
@@ -119,7 +129,24 @@ if __name__ == "__main__":
     )
     filesystem = gcsfs.GCSFileSystem()
 
-    download_annual_service_and_opex(client, filesystem)
-    download_operating_and_capital_funding(client, filesystem)
-    download_capital_expenditures(client, filesystem)
+    min_year = 2015
+    state = ["CA", "OR", "AZ", "NV"]
 
+    download_annual_service_and_opex(
+        client,
+        filesystem,
+        min_year=min_year,
+        state=state,
+    )
+    download_operating_and_capital_funding(
+        client,
+        filesystem,
+        min_year=min_year,
+        state=state,
+    )
+    download_capital_expenditures(
+        client,
+        filesystem,
+        min_year=min_year,
+        state=state,
+    )
