@@ -1,0 +1,9 @@
+title: Mode Report Analysis 
+directory: .
+readme: ./mode_report.md
+parts:
+  - chapters:
+    - notebook: ./mode_report.ipynb
+deploy:
+  staging: gs://calitp-analysis-staging/mode_report
+  prod: gs://calitp-analysis/mode_report
