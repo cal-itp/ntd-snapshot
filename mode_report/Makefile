@@ -10,3 +10,8 @@ monthly_portfolio:
 	uv run calitp-portfolio login
 	uv run calitp-portfolio deploy mode_report.yml --target staging
 	uv run calitp-portfolio deploy mode_report.yml --target prod
+
+change_portfolio_name:
+	# update the deploy names in mode_report.yml and sites.yml
+	uv run calitp-portfolio index ../calitp-portfolio-sites/sites.yml --deploy --target staging 
+	uv run calitp-portfolio index ../calitp-portfolio-sites/sites.yml --deploy --target prod --output /tmp/index.html
