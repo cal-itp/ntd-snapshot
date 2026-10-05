@@ -17,7 +17,7 @@ This chart shows trends in `transit ridership`, `operating expenditures`, `capit
 <div style="border-top: 1px solid #999; margin: 2em 0;"></div>
 
 
-### 1.2 CAPEX and OPEX Share by Mode Group
+### 1.2 1.2 Capital and Operating Expenditures by Mode Group Over Time
 
 This chart shows how `operating expenditures` and `capital expenditures` are distributed across transit mode groups from `2019` to `2024`. Each bar represents the total expenditure for a mode group in a given year, with the stacked segments showing the share attributable to OPEX and CAPEX.
 
