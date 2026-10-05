@@ -1,92 +1,194 @@
-# Transit Mode Report: Spending, Efficiency, and Effectiveness
-Mode report provides a mode-level overview of transit spending, service delivery and cost-effectiveness using NTD data. Rather than comparing individual agencies, the analysis summarizes patterns across transit modes and broader mode groups. Related modes are grouped to facilitate interpretation for some analysis - for example Bus includes modes such as Bus, BRT, Commuter Bus and Trolley Bus, while Rail includes modes such as Commuter Rail, Heavy Rail, Light Rail and StreetCar. The analysis considers expenditure trends, spending composition, service intensity, operating costs, farebox recovery, fare revenue, and fleet utilization to describe differences in how transit services are funded and delivered.
+# Transit Mode Report Summary
+Mode report provides a mode-level overview of transit spending, service delivery and cost-effectiveness using NTD data. Rather than comparing individual agencies, the analysis summarizes patterns across transit modes and broader mode groups. Related modes are grouped to facilitate interpretation for some analysis - for example **Bus** includes modes such as `Bus`, `BRT`, `Commuter Bus` and `Trolley Bus`, while **Rail** includes modes such as `Commuter Rail`, `Heavy Rail`, `Light Rail` and `StreetCar`. The remaining modes are grouped into `Others`. The analysis considers expenditure trends, spending composition, service intensity, operating costs, farebox recovery, fare revenue, and fleet utilization to describe differences in how transit services are funded and delivered.
 
 
 ## 1. Trend and Composition
 ### 1.1 Ridership, OPEX, CAPEX, VRH and VRM Trend
-- This graph shows the trends in Unlinked Passenger Trips, Operating Expenditures, and Capital Expenditures over time. It helps illustrate how transit ridership has changed alongside operating costs and investments in transit infrastructure.
+This chart shows trends in `transit ridership`, `operating expenditures`, `capital expenditures`, and `service levels` across transit modes over time. It provides a high-level view of how passenger demand, transit spending, and service delivery have changed over time.
 
-### 1.2 Expenses Breakdown by Mode for Latest NTD Year
-- These two stacked bar charts show the composition of transit expenditures by mode in 2024. The first chart breaks down operating expenditures into vehicle operations, vehicle maintenance, non-vehicle maintenance, and general administration, while the second shows capital expenditures divided into rolling stock, facilities, and other expenditures. Since the bars are normalized, the charts emphasize the percentage share of each spending component within each mode, making it easier to compare how different transit modes allocate their operating and capital spending.
+*How to read the chart*
+
+- **X-axis:** Shows `Years`.
+- **Y-axis:** Represents the value of the selected measure: `Unlinked Passenger Trips`, `Operating Expenditures`, `Capital Expenditures`, `Vehicle Revenue Hours`, or `Vehicle Revenue Miles`.
+- **Trend:** Changes over time show whether ridership, spending, or service levels are increasing or declining.
+- **Comparison:** The relative movement of the measures highlights periods when ridership, spending, and service delivery have diverged or moved together.
+
+
+<div style="border-top: 1px solid #999; margin: 2em 0;"></div>
+
+
+### 1.2 CAPEX and OPEX Share by Mode Group
+
+This chart shows how `operating expenditures` and `capital expenditures` are distributed across transit mode groups from `2019` to `2024`. Each bar represents the total expenditure for a mode group in a given year, with the stacked segments showing the share attributable to OPEX and CAPEX.
+
+*How to read the chart*
+
+- **X-axis:** Shows `year`, with bars grouped by `mode group`.
+- **Y-axis:** Shows each expenditure type as a `share of total expenditure (%)`, ranging from 0% to 100%.
+- **Composition:** The relative size of each colored segment shows the share of CAPEX or OPEX within the mode group's total expenditure for that year.
+- **Trend:** Changes in the composition over time show whether a mode group's spending has shifted toward operating or capital expenditures.
+- **Comparison:** Differences in the OPEX and CAPEX shares across mode groups highlight differences in how transit spending is allocated.
+
+<div style="border-top: 1px solid #999; margin: 2em 0;"></div>
+
+### 1.3 Expenses Breakdown by Mode for Latest NTD Year
+
+These two stacked bar charts show the composition of `operating` and `capital expenditures` across transit mode groups in `2024`. The charts show how each mode group allocates its total expenditures across different spending components. Because the bars are normalized, the focus is on the relative share of each component rather than the absolute amount spent.
+
+*How to read the chart*
+
+- **X-axis:** Shows `mode group`.
+- **Y-axis:** Shows each expenditure component as a `share of total expenditures (%)`, with each bar totaling 100%.
+- **OPEX:** Components include `Vehicle Operations`, `Vehicle Maintenance`, `Non-Vehicle Maintenance`, and `General Administration`.
+- **CAPEX:** Components include `Rolling Stock`, `Facilities`, and `Other Expenditures`.
+- **Composition:** The relative size of each segment shows the share of total OPEX or CAPEX allocated to that component within a mode group.
+- **Comparison:** Differences in segment sizes across mode groups highlight how spending composition varies across transit modes.
+
+
+<div style="border-top: 4px solid #ddd; margin: 2em 0;"></div>
 
 ## 2. Efficiency/ Performance
-Efficiency and performance evaluate how transit modes use their operating and capital resources. The analysis looks at spending concentration, spending per capita, and year-to-year spending volatility, while also comparing operating costs per vehicle revenue hour, vehicle revenue mile, and passenger trip. Together, these measures show how much agencies spend, how consistently they spend, and how efficiently spending is translated into transit service and passenger trips.
+Efficiency and performance evaluate how transit modes use their operating and capital resources. The analysis looks at `spending concentration`, `spending per capita`, and `year-to-year spending volatility`, while also comparing `operating costs per vehicle revenue hour`, `vehicle revenue mile`, and `passenger trip`. Together, these measures show how much agencies spend, how consistently they spend, and how efficiently spending is translated into transit service and passenger trips.
 
 ### 2.1 Mode Performance (Herfindahl-Hirschman Index, Spending Per Capita and Volatility)
-The OPEX scorecard helps describe how each transit mode's operating spending is distributed, scaled relative to population, and changing over time. The CAPEX scorecard applies the same framework to capital investment. Together, the two scorecards provide a compact view of differences in spending concentration, spending intensity, and year-to-year stability across transit modes.
 
-- Expense Concentration:
-The Herfindahl-Hirschman Index (HHI) measures how concentrated spending is across the different expenditure components. A higher HHI means that a larger share of spending is concentrated in fewer components, while a lower HHI indicates that spending is distributed more evenly across components.
+The OPEX and CAPEX scorecards compare transit mode groups across three measures: `expense concentration`, `spending per capita`, and `spending volatility`. Together, they show how spending is distributed, the level of spending relative to population, and how much spending changed from the previous year.
 
-- Spending per Capita:
-This measures the amount of operating or capital expenditure associated with each person in the service area. It provides a way to compare spending across transit modes while accounting for differences in population size.
+*How to read the chart*
 
-- Spending Volatility:
-This measures the average absolute year-over-year change in spending. A higher percentage indicates that spending has changed more substantially from year to year, while a lower percentage indicates relatively more stable spending. Currently, we are using 2024 spending compared with 2023 spending to calculate volatility.
+- **Measures:** Each scorecard shows `Expense Concentration`, `Spending per Capita`, and `Spending Volatility`.
+- **Expense Concentration:** Measured using the `Herfindahl-Hirschman Index (HHI)`. Higher values indicate that spending is concentrated in fewer expenditure components, while lower values indicate a more evenly distributed spending composition.
+- **Spending per Capita:** Shows operating or capital expenditure relative to the population of the service area.
+- **Spending Volatility:** Shows the `average absolute year-over-year change` in spending. The 2024 scorecards compare spending in `2024` with `2023`; higher values indicate larger changes in spending.
+- **Bars:** Each bar represents a transit mode group. The highlighted bar represents the mode group with the highest value for that metric.
+- **Comparison:** Values should be compared within each metric because the three measures use different units and scales.
+
+
+<div style="border-top: 1px solid #999; margin: 2em 0;"></div>
 
 ### 2.2 Cost-Efficiency by Mode
-This heatmap compares the operating cost efficiency of different transit modes in 2024 using three cost-based measures. The matrix helps show how much operating expenditure is associated with the amount of transit service provided and the number of passenger trips. Because the three metrics have different scales, they are standardized separately using z-scores. This means the colors indicate whether a mode's cost is relatively high or low compared with other modes for that particular metric. A mode with a value near the average has a z-score close to zero, while values farther from the average indicate relatively higher or lower costs. The metrics are also reverse-scaled, so lower relative cost indicates greater cost efficiency. In other words, darker blue represents lower relative cost and therefore greater cost efficiency, while higher relative costs appear toward the red end of the scale. Therefore, the colors should be interpreted within each column rather than across columns.
 
-- Cost per VRH (Vehicle Revenue Hour): Measures operating expenditure per hour of revenue-generating service. It indicates how much it costs to provide each hour of transit service.
-- Cost per VRM (Vehicle Revenue Mile): Measures operating expenditure per revenue-generating vehicle mile. It shows the cost associated with providing each mile of transit service.
-- Cost per Trip: Measures operating expenditure per Unlinked Passenger Trip (UPT). It indicates how much operating expenditure is associated with each passenger trip.
+This heatmap compares `operating cost efficiency` across transit modes in 2024 using `operating expenditure per Vehicle Revenue Hour (VRH)`, `Vehicle Revenue Mile (VRM)`, and `Unlinked Passenger Trip (UPT)`. Each metric is standardized separately using a `z-score` and reverse-scaled so that lower relative costs indicate greater cost efficiency.
+
+*How to read the chart*
+
+- **Rows:** Each row represents a `transit mode`.
+- **Columns:** Each column represents a cost-efficiency measure: `OPEX per VRH`, `OPEX per VRM`, or `OPEX per Trip`.
+- **Color:** `Blue` indicates relatively lower cost and greater cost efficiency, while `red` indicates relatively higher cost. Values near the midpoint represent costs closer to the mode average.
+- **Standardization:** Each column is standardized separately using a `z-score`, so the colors show how each mode compares with other modes for that metric.
+- **Interpretation:** Because each column is standardized independently, colors should be compared `within each column`, not across columns.
+- **Cost per VRH:** Operating expenditure associated with each hour of revenue service.
+- **Cost per VRM:** Operating expenditure associated with each revenue-generating vehicle mile.
+- **Cost per Trip:** Operating expenditure associated with each unlinked passenger trip.
+
+
+<div style="border-top: 1px solid #999; margin: 2em 0;"></div>
 
 
 ### 2.3 Cost per VRH: Variation Within Each Mode
-The cost-efficiency heatmap above compares modes using averages, but an average can hide how much individual agencies differ. This box plot shows the spread of operating expense per Vehicle Revenue Hour (VRH) across California agencies within each transit mode in 2024. Each agency's cost is placed on a scale, and the agencies in a mode are lined up from cheapest to most expensive. That ordered list is then split into four equal parts using quartiles, which are cut points that mark the 25%, 50%, and 75% positions in the list. The box covers the middle half of agencies, so it shows where most agencies in that mode sit. A box farther to the right means higher cost per revenue hour, and a wider box means agencies running the same mode have more varied costs. Modes are sorted by their typical (median) cost, and the number of agencies in each mode is shown in brackets, for example (n=168).
 
-- Box: Runs from the 25th to the 75th percentile. It contains the middle 50% of agencies in the mode. The box width shows how much agencies differ from one another.
-- Dark vertical line (median):The middle agency in the mode. Half of the agencies cost less and half cost more. It is not the average, so a few very expensive agencies do not pull it upward.
-- Whiskers (thin horizontal lines): Extend from the box to the cheapest and most expensive agencies that still fall within the normal range, defined as up to 1.5 times the box width beyond the box edges.
-- Dots: Agencies outside the whiskers. These are unusually high or low cost compared with other agencies in the same mode.
-- 
+This box plot shows the distribution of `operating expense per Vehicle Revenue Hour (VRH)` across California agencies within each transit mode in `2024`. Unlike the mode-level averages shown in the previous chart, this view shows how much costs vary between individual agencies operating the same mode. Modes are ordered by their `median cost`, and the number of agencies included in each mode is shown as `(n=...)`.
+
+*How to read the chart*
+
+- **X-axis:** Shows `operating expense per Vehicle Revenue Hour (VRH)`. Values farther to the right indicate higher operating costs per hour of revenue service.
+- **Y-axis:** Shows `transit mode`. Modes are ordered from higher to lower median cost.
+- **Box:** Represents the middle `50%` of agencies in a mode, from the `25th percentile` to the `75th percentile`. A wider box indicates greater variation in costs among the agencies in that mode.
+- **Median:** The dark line inside the box represents the `median` cost. Half of the agencies have costs below this value and half have costs above it. The median is used to represent the typical agency because it is less affected by unusually high or low costs than an average.
+- **Whiskers:** Extend beyond the box to the lowest and highest observations that fall within `1.5 × IQR` of the lower and upper quartiles. They represent the typical range of agency costs within the mode.
+- **Dots:** Represent `outliers` beyond the whiskers. These agencies have unusually high or low costs compared with other agencies in the same mode.
+- **Overall spread:** The position of the box shows the typical cost level for a mode, while the width of the box and length of the whiskers show how much costs vary across agencies.
+
+
+<div style="border-top: 4px solid #ddd; margin: 2em 0;"></div>
 
 ## 3. Cost-effectiveness
-Cost-effectiveness examines how effectively transit modes generate fare revenue relative to their operating costs. It uses farebox recovery, fare revenue per passenger trip, and net subsidy per trip to show how much of the cost is supported by fares and how much subsidy is required. The indexed comparison of operating costs and fare revenue from 2019 onward also shows whether expenses and fare revenue have grown at similar or different rates over time.
+Cost-effectiveness examines how effectively transit modes generate fare revenue relative to their operating costs. It uses `farebox recovery`, `fare revenue per passenger trip`, and `net subsidy per trip` to show how much of the cost is supported by fares and how much subsidy is required. The indexed comparison of operating costs and fare revenue from `2019` onward also shows whether expenses and fare revenue have grown at similar or different rates over time.
 
 ### 3.1 Farebox Recovery Ratio by Mode
-This plot shows the distribution of Farebox Recovery Ratio across different transit modes in California in 2024. Farebox Recovery Ratio measures the share of operating expenses covered by fare revenue. A higher ratio means fares cover a larger portion of operating costs. The distributions can be compared across modes based on their location and shape, showing whether a mode tends to have higher or lower farebox recovery ratios and whether recovery ratios vary more or less across agencies. Because this is a density plot, the height of one ridge should not be interpreted as indicating that one mode has more agencies than another. Instead, density is normalized within each mode to show the concentration and shape of the distribution.
 
-- Each ridge represents one transit mode. The shape shows how the recovery ratios are distributed across agencies within that mode.
-- Density: Density represents how concentrated the agencies' farebox recovery ratios are around a particular value. A higher density means more observations are concentrated around that part of the distribution.
-- Peak: The peak is simply the point where the density is highest. In other words, it shows the farebox recovery ratio around which observations are most concentrated for that mode.
-- Spread: Spread shows how widely the farebox recovery ratios vary across agencies. A wider distribution means greater variation among agencies, while a narrower distribution means agencies have more similar recovery ratios.
+This ridge plot shows the distribution of `Farebox Recovery Ratio` across transit modes in California in `2024`. Farebox Recovery Ratio represents the share of operating expenses covered by fare revenue. The chart shows both the typical level of farebox recovery and the variation across agencies within each mode.
+
+*How to read the chart*
+
+- **X-axis:** Shows `Farebox Recovery Ratio`. Higher values indicate a greater share of operating expenses covered by fare revenue.
+- **Ridges:** Each ridge represents the distribution of farebox recovery ratios across agencies within a transit mode.
+- **Peak:** Indicates where observations are most concentrated within a mode.
+- **Spread:** A wider ridge indicates greater variation in farebox recovery ratios across agencies, while a narrower ridge indicates more similar values.
+- **Density:** The height of a ridge represents the relative concentration of observations at a given recovery ratio. Because density is normalized within each mode, ridge height should not be used to compare the number of agencies across modes.
+
+
+<div style="border-top: 1px solid #999; margin: 2em 0;"></div>
 
 ### 3.2 Cost Effectiveness Matrix
-This heatmap compares the cost-effectiveness of different transit modes in 2024 using three measures related to fare revenue, farebox recovery, and the amount of operating subsidy required per passenger trip. Because these metrics have different scales, they are standardized separately using z-scores, so the colors indicate how each mode compares with the other modes for that particular metric. A value near zero represents the mode average, while positive or negative values indicate values above or below the average. The metrics are directionally scaled so that the interpretation reflects cost-effectiveness: higher fare-related measures are more favorable, while lower subsidy per trip is more favorable. Therefore, colors should be interpreted within each column rather than across columns. For Farebox Recovery and Fare Revenue per Trip, higher values are treated as more favorable. For Net Subsidy per Trip, the scale is reversed because lower subsidy requirements are more favorable.
 
-- Farebox Recovery: Measures the share of operating expenses covered by fare revenue. A higher farebox recovery ratio means a greater portion of operating costs is covered by fares.
-- Fare Revenue per Trip: Measures the amount of fare revenue generated per unlinked passenger trip. A higher value indicates greater fare revenue generated per passenger trip.
-- Net Subsidy per Trip: Measures the operating subsidy required for each passenger trip after accounting for fare revenue. A lower value indicates less subsidy is required per passenger trip.
+This heatmap compares the `cost-effectiveness` of different transit modes in 2024 using `Farebox Recovery`, `Fare Revenue per Trip`, and `Net Subsidy per Trip`. Each metric is standardized separately using a `z-score`, with the scale oriented so that higher fare-related values and lower subsidy requirements indicate greater cost-effectiveness.
+
+*How to read the chart*
+
+- **Rows:** Each row represents a `transit mode`.
+- **Columns:** Each column represents a cost-effectiveness measure: `Farebox Recovery`, `Fare Revenue per Trip`, or `Net Subsidy per Trip`.
+- **Color:** `Blue` indicates relatively greater cost-effectiveness, while `red` indicates relatively lower cost-effectiveness. Values near the midpoint represent results closer to the mode average.
+- **Standardization:** Each column is standardized separately using a `z-score`, so colors show how each mode compares with other modes for that metric.
+- **Direction:** For `Farebox Recovery` and `Fare Revenue per Trip`, higher values are more favorable. For `Net Subsidy per Trip`, the scale is reversed because lower subsidy requirements are more favorable.
+- **Interpretation:** Because each column is standardized independently, colors should be compared `within each column`, not across columns.
+
+
+<div style="border-top: 1px solid #999; margin: 2em 0;"></div>
 
 ### 3.3 Operating Costs vs. Fare Revenue, Indexed to 2019
-This chart compares the growth of operating expenses and fare revenue across transit modes from 2019 onward, with both measures indexed to 2019 = 100. Indexing allows the two measures to be compared based on their relative growth over time, rather than their different dollar amounts. Each panel represents a transit mode, and the two lines show how operating expenses and fare revenue change relative to their 2019 levels.
 
-- 2019 = 100: A value of 100 represents the level of that measure in 2019. A value above 100 indicates growth relative to 2019, while a value below 100 indicates a decline relative to 2019.
-- When the two lines move farther apart, it indicates that operating expenses and fare revenue are growing at different rates. A widening gap between expenses and fare revenue indicates increasing divergence in their growth relative to 2019.
-- When the two lines move closer together, the growth rates of operating expenses and fare revenue are becoming more similar relative to their 2019 levels.
+This chart compares how `operating expenses` and `fare revenue` have changed relative to their `2019` levels across transit mode groups. Both measures are indexed to `2019 = 100`, which puts them on a common scale and makes their growth rates directly comparable even though their actual dollar amounts are very different. Each panel represents a transit mode group, with separate lines for operating expenses and fare revenue.
 
-The chart shows relative growth, not the actual dollar difference between operating expenses and fare revenue. For example, two modes can have the same index value while having very different actual spending or revenue levels.
+Using a common base year makes it easier to see whether fare revenue has kept pace with changes in operating expenses. For example, if operating expenses rise to `150` while fare revenue rises to `120`, operating expenses have grown by `50%` since 2019 while fare revenue has grown by `20%`.
+
+*How to read the chart*
+
+- **X-axis:** Shows `year`, starting from the 2019 base year.
+- **Y-axis:** Shows the indexed value, where `2019 = 100`. A value of `120` means the measure is `20% higher` than in 2019, while a value of `80` means it is `20% lower`.
+- **Lines:** `Blue` represents `Operating Expenses`; `orange` represents `Fare Revenue`.
+- **Index:** Each year's value is divided by that mode group's value in `2019` and multiplied by 100. This sets both measures to the same starting point, allowing their relative growth to be compared.
+- **Gap between lines:** A widening gap indicates that operating expenses and fare revenue are growing at different rates. If the operating expense line is above the fare revenue line, expenses have grown faster relative to 2019.
+- **Convergence:** Lines moving closer together indicate that the relative growth rates of operating expenses and fare revenue are becoming more similar.
+- **Important:** The indexed values show `relative change since 2019`, not actual dollar amounts. Two mode groups can have the same index while having very different levels of spending or fare revenue.
+
+
+<div style="border-top: 4px solid #ddd; margin: 2em 0;"></div>
 
 
 ## 4. Service Effectiveness
-Service effectiveness focuses on how efficiently transit resources are converted into passenger service and how intensively the fleet is used. By comparing operating costs with passenger trips per vehicle mile and hour, the analysis shows the relationship between service costs and passenger utilization. Fleet utilization and operating speed provide additional insight into how intensively vehicles are used and how quickly service is delivered.
+`Service effectiveness` focuses on how efficiently transit resources are converted into passenger service and how intensively the fleet is used. By comparing operating costs with passenger trips per vehicle mile and hour, the analysis shows the relationship between service costs and passenger utilization. Fleet utilization and operating speed provide additional insight into how intensively vehicles are used and how quickly service is delivered.
 
 ### 4.1 Operating Efficiency: Cost vs. Service Utilization and Service Intensity
-This set of scatter plots examines the relationship between operating cost and passenger service utilization across transit modes. Two measures of transit service are used: Vehicle Revenue Miles (VRM) and Vehicle Revenue Hours (VRH). The log transformation is used to make differences across agencies and modes easier to visualize when the values vary substantially in scale. Each point represents an agency-mode observation, with color identifying the transit mode and point size representing passenger trips. Observations toward the upper-right have both higher cost per unit of service and higher passenger utilization per unit of service. Observations toward the lower-left have lower values for both measures.
 
-- VRM-based chart: Compares operating expense per vehicle revenue mile with passenger trips per vehicle revenue mile. It shows how operating costs and passenger utilization relate to the amount of service measured by miles.
-- VRH-based chart: Compares operating expense per vehicle revenue hour with passenger trips per vehicle revenue hour. It shows the relationship between operating costs and passenger utilization based on hours of service.
-- X-axis shows the log of operating expenditure per VRM or VRH. Moving right indicates a higher operating cost per unit of service. Y-axis shows the log of passenger trips per VRM or VRH. Moving upward indicates greater passenger utilization per unit of service.
-- Point size: Represents total unlinked passenger trips. Larger points indicate more passenger trips, while smaller points indicate fewer trips.
-- Log scale: Both axes use log10, so the chart emphasizes relative differences and relationships rather than absolute differences. The distance between values represents multiplicative rather than simple dollar/trip changes.
+These scatter plots examine the relationship between `operating cost` and `passenger utilization` across transit mode groups. The VRM-based chart relates costs and passenger trips to the amount of service provided in miles, while the VRH-based chart uses hours of service. Both axes are shown on a `log10` scale to make differences across agencies easier to visualize when values vary substantially.
+
+*How to read the chart*
+
+- **X-axis:** Shows `operating expense per Vehicle Revenue Mile (VRM)` in the VRM-based chart and `operating expense per Vehicle Revenue Hour (VRH)` in the VRH-based chart. Values increase from left to right.
+- **Y-axis:** Shows `passenger trips per VRM` in the VRM-based chart and `passenger trips per VRH` in the VRH-based chart. Values increase from bottom to top.
+- **Colors:** Each color represents a `mode group`.
+- **Point size:** Represents total `Unlinked Passenger Trips (UPT)`. Larger points indicate more passenger trips.
+- **Log scale:** Both axes use `log10` scaling. A fixed distance on an axis represents a multiplicative change rather than a fixed numerical change.
+- **Position:** Points toward the `upper-right` have both higher operating costs per unit of service and higher passenger utilization per unit of service, while points toward the `lower-left` have lower values for both.
+- **VRM-based chart:** Evaluates cost and passenger utilization relative to the amount of service provided in `miles`.
+- **VRH-based chart:** Evaluates cost and passenger utilization relative to the amount of service provided in `hours`.
+
+
+<div style="border-top: 1px solid #999; margin: 2em 0;"></div>
 
 
 ### 4.2 Fleet & Service Delivery
-This chart examines how intensively transit fleets are being used and how quickly service operates across different transit modes. The two measures provide complementary views of fleet and service operations. Higher revenue hours per vehicle indicate greater fleet utilization, while higher average operating speed indicates faster service. A mode can have high fleet utilization but relatively low operating speed, or vice versa, depending on its operating characteristics.
 
- - Fleet Utilization: Measures Vehicle Revenue Hours (VRH) per vehicle, where VRH represents the hours vehicles are actively providing revenue service. A higher value means each vehicle is being used for more hours of passenger service, indicating more intensive use of the fleet.
-- Operating Speed: Measures average operating speed in miles per hour (mph), calculated as Vehicle Revenue Miles (VRM) divided by VRH. It indicates how quickly vehicles travel while providing revenue service, with a higher value representing faster service.
+This chart compares `fleet utilization` and `operating speed` across transit modes. Fleet utilization shows how many hours each vehicle is used for revenue service, while operating speed shows how quickly vehicles travel while providing that service.
+
+*How to read the chart*
+
+- **Y-axis:** Shows `transit mode`, with modes ordered by the value of the measure shown in each chart.
+- **X-axis:** `Fleet Utilization` shows `Vehicle Revenue Hours (VRH) per vehicle`. Higher Fleet Utilization values indicate more intensive use of the fleet. `Operating Speed` shows `average operating speed (mph)`, calculated as `Vehicle Revenue Miles (VRM) ÷ Vehicle Revenue Hours (VRH)`. Higher Operating Speed values indicate faster service.
+- **Bars:** Each bar represents the value of the corresponding measure for a transit mode.
+- **Comparison:** The two charts provide complementary views of service delivery: a mode can have high fleet utilization without having high operating speed, or vice versa.
 
 
 
+<div style="border-top: 4px solid #ddd; margin: 2em 0;"></div>
