@@ -1,3 +1,5 @@
+import re
+
 import gcsfs
 import geopandas as gpd
 import numpy as np
@@ -30,6 +32,15 @@ def load_capex():
         f"{GCS_FILE_PATH}capital_expenditures.parquet",
         filesystem=filesystem,
     )
+
+
+def normalize_uza_name(x):
+    if pd.isna(x):
+        return x
+
+    x = str(x).strip()
+    x = re.sub(r"-+", "-", x)
+    return x
 
 
 def aggregate_capex_to_agency_year(df):
@@ -112,6 +123,121 @@ def aggregate_opex_to_agency_year(df):
 
 def subset_california(df):
     return df[df["source_state"] == "CA"].copy()
+
+
+def reconcile_modes_for_merge(df_capex, df_opex):
+    """
+    Reconcile mode names for the merged CapEx/OpEx dataset only.
+
+    Shared modes are kept unchanged.
+    Modes appearing in only one dataset are mapped to "Other".
+    The original mode name is preserved in `original_mode_full_name`.
+
+    This function does NOT modify the input DataFrames.
+    """
+
+    capex = df_capex.copy()
+    opex = df_opex.copy()
+
+    # Preserve original mode names
+    capex["original_mode_full_name"] = capex["mode_full_name"]
+    opex["original_mode_full_name"] = opex["mode_full_name"]
+
+    # Modes that exist in both datasets
+    shared_modes = set(capex["mode_full_name"].dropna()) & set(
+        opex["mode_full_name"].dropna()
+    )
+
+    # Dataset-specific modes -> Other
+    capex["mode_full_name"] = capex["mode_full_name"].where(
+        capex["mode_full_name"].isin(shared_modes),
+        "Other",
+    )
+
+    opex["mode_full_name"] = opex["mode_full_name"].where(
+        opex["mode_full_name"].isin(shared_modes),
+        "Other",
+    )
+
+    # Recalculate mode groups after reconciliation
+    capex = add_mode_group(capex)
+    opex = add_mode_group(opex)
+
+    return capex, opex
+
+
+def merge_capex_opex(df_capex, df_opex):
+    """
+    Merge CapEx and OpEx after reconciling modes.
+
+    The input DataFrames are copied, so the original independent
+    CapEx and OpEx datasets are not modified.
+
+    Final grain:
+        one row per ntd_id × year × mode_full_name
+    """
+
+    capex, opex = reconcile_modes_for_merge(
+        df_capex,
+        df_opex,
+    )
+
+    merge_keys = [
+        "ntd_id",
+        "year",
+        "mode_full_name",
+        "reporter_type",
+        "reporting_module",
+        "agency_status",
+        "source_state",
+        "source_agency",
+    ]
+
+    # Aggregate to the merge grain
+    # OpEx can have multiple rows per mode/year because of
+    # type_of_service. CapEx can also have multiple source rows.
+    # Sum numeric expenditure/service measures before merging.
+
+    capex_numeric = [
+        "total_capital_expenditures_real",
+        "rolling_stock_expenditures_real",
+        "facilities_expenditures_real",
+        "other_expenditures_real",
+    ]
+
+    opex_numeric = [
+        "operating_expenses_total_real",
+        "operating_expenses_vehicle_operations_real",
+        "operating_expenses_vehicle_maintenance_real",
+        "operating_expenses_nonvehicle_maintenance_real",
+        "operating_expenses_general_administration_real",
+        "fare_revenue_real",
+        "unlinked_passenger_trips",
+        "vehicle_revenue_hours",
+        "vehicle_revenue_miles",
+        "passenger_miles_traveled",
+        "vehicles_operated_in_maxiumum_service",
+    ]
+
+    # Only aggregate columns that actually exist
+    capex_numeric = [col for col in capex_numeric if col in capex.columns]
+
+    opex_numeric = [col for col in opex_numeric if col in opex.columns]
+
+    capex = capex.groupby(merge_keys, as_index=False)[capex_numeric].sum()
+
+    opex = opex.groupby(merge_keys, as_index=False)[opex_numeric].sum()
+
+    # Merge
+    merged = capex.merge(
+        opex,
+        on=merge_keys,
+        how="outer",
+        suffixes=("_capex", "_opex"),
+        indicator=True,
+    )
+
+    return merged
 
 
 def add_mode_group(df):
@@ -293,6 +419,10 @@ def create_mode_report_data():
     df_capex = add_mode_group(subset_california(load_capex()))
     df_opex = add_mode_group(subset_california(load_service_and_opex()))
 
+    df_capex["uza_name"] = df_capex["uza_name"].apply(normalize_uza_name)
+
+    df_opex["primary_uza_name"] = df_opex["primary_uza_name"].apply(normalize_uza_name)
+
     # Convert nominal values to 2024 dollars
     cpi_annual = get_annual_average_cpi(2015, 2024)
     base_cpi = cpi_annual.loc[cpi_annual["year"] == 2024, "cpi"].iloc[0]
@@ -405,18 +535,44 @@ def create_mode_report_data():
         df_capex = df_capex.merge(metrics, on=["year", "mode_group"], how="left")
     df_capex = df_capex.merge(capex_vol, on="mode_group", how="left")
 
-    return df_capex, df_opex
+    df_merged = merge_capex_opex(
+        df_capex,
+        df_opex,
+    )
+
+    df_merged = add_mode_group(df_merged)
+
+    df_merged["capex_per_vrh_real"] = (
+        df_merged["total_capital_expenditures_real"]
+        / df_merged["vehicle_revenue_hours"]
+    )
+    df_merged["capex_per_vrm_real"] = (
+        df_merged["total_capital_expenditures_real"]
+        / df_merged["vehicle_revenue_miles"]
+    )
+    df_merged["capex_per_upt_real"] = (
+        df_merged["total_capital_expenditures_real"]
+        / df_merged["unlinked_passenger_trips"]
+    )
+
+    return df_capex, df_opex, df_merged
 
 
 if __name__ == "__main__":
-    df_capex, df_opex = create_mode_report_data()
-    export_to_gcs(df_capex, "mode_report_capex", filesystem)
-    export_to_gcs(df_opex, "mode_report_opex", filesystem)
+    df_capex, df_opex, df_merged = create_mode_report_data()
+    export_to_gcs(df_capex, "mode_report_capex_data", filesystem)
+    export_to_gcs(df_opex, "mode_report_opex_data", filesystem)
+    export_to_gcs(
+        df_merged,
+        "mode_report_capex_opex_data",
+        filesystem,
+    )
 
 
 def load_processed_data_for_mode_report(
-    capex_file="mode_report_capex.parquet",
-    opex_file="mode_report_opex.parquet",
+    capex_file="mode_report_capex_data.parquet",
+    opex_file="mode_report_opex_data.parquet",
+    merged_file="mode_report_capex_opex_data.parquet",
 ):
     df_capex = pd.read_parquet(
         f"{GCS_FILE_PATH}{capex_file}",
@@ -428,4 +584,9 @@ def load_processed_data_for_mode_report(
         filesystem=filesystem,
     )
 
-    return df_capex, df_opex
+    df_merged = pd.read_parquet(
+        f"{GCS_FILE_PATH}{merged_file}",
+        filesystem=filesystem,
+    )
+
+    return df_capex, df_opex, df_merged

@@ -8,6 +8,65 @@ from pywaffle import Waffle
 alt.data_transformers.enable("vegafusion")
 
 
+def composition_by_year(df, cols, chart_title=None, colors=None, width=650, height=140):
+    colors = colors or [
+        "#AEC6CF",
+        "#FFDAB9",
+        "#BFD8B8",
+        "#D8BFD8",
+        "#FFE5A5",
+        "#C5CAE9",
+        "#F4B6C2",
+        "#B2DFDB",
+    ]
+    d = df[["ntd_id", "year"] + list(cols)].drop_duplicates()
+    charts = []
+
+    for col, title in cols.items():
+        x = d.groupby(["year", col])["ntd_id"].nunique().reset_index(name="n")
+        x[col] = x[col].fillna("Missing").astype(str)
+        x["pct"] = x["n"] / x.groupby("year")["n"].transform("sum") * 100
+        cats = x[col].unique().tolist()
+        scale = alt.Scale(domain=cats, range=colors[: len(cats)])
+
+        bars = (
+            alt.Chart(x)
+            .mark_bar()
+            .encode(
+                x=alt.X("year:O", title="Year"),
+                y=alt.Y(
+                    "pct:Q", title="Share of agencies", scale=alt.Scale(domain=[0, 100])
+                ),
+                color=alt.Color(f"{col}:N", scale=scale, legend=None),
+                tooltip=[
+                    "year:O",
+                    alt.Tooltip(f"{col}:N", title=title),
+                    "n:Q",
+                    alt.Tooltip("pct:Q", title="Share", format=".1f"),
+                ],
+            )
+            .properties(width=width, height=height, title=title)
+        )
+
+        ld = pd.DataFrame({"category": cats, "y": range(len(cats))})
+        legend = (
+            alt.Chart(ld)
+            .mark_square(size=80)
+            .encode(
+                y=alt.Y("y:O", axis=None),
+                color=alt.Color("category:N", scale=scale, legend=None),
+            )
+            + alt.Chart(ld)
+            .mark_text(align="left", dx=8, fontSize=11)
+            .encode(y=alt.Y("y:O", axis=None), text="category:N")
+        ).properties(width=150, height=max(40, len(cats) * 22))
+
+        charts.append(alt.hconcat(bars, legend, spacing=8))
+
+    chart = alt.vconcat(*charts, spacing=20).configure_view(strokeWidth=0)
+    return chart.properties(title=chart_title) if chart_title else chart
+
+
 def prep_for_mode_trend(df, value_column):
     trend_df = df.groupby(["year", "mode_group"])[value_column].sum().reset_index()
     trend_df[value_column] = trend_df[value_column].round(0).astype(int)
@@ -282,45 +341,68 @@ def percent_stacked_bar(
     df,
     group_column,
     category_columns,
-    year_column=None,
-    year=None,
-    rank_column=None,
-    top_n=10,
+    year_column="year",
+    year_range=(2019, 2024),
     chart_title=None,
     chart_subtitle=None,
     y_title="Percentage",
     colors=None,
-    width=500,
-    height=300,
+    width=700,
+    height=400,
 ):
-    df_plot = df.copy()
-
-    if year_column is not None and year is not None:
-        df_plot = df_plot[df_plot[year_column] == year]
-
-    if rank_column is not None:
-        top_groups = (
-            df_plot.groupby(group_column)[rank_column]
-            .sum()
-            .nlargest(top_n)
-            .index.tolist()
-        )
-        df_plot = df_plot[df_plot[group_column].isin(top_groups)]
-    else:
-        top_groups = df_plot[group_column].drop_duplicates().tolist()
+    d = df[df[year_column].between(*year_range)].copy()
 
     data = (
-        df_plot.groupby(group_column)[list(category_columns.values())]
+        d.groupby([year_column, group_column])[list(category_columns.values())]
         .sum()
         .reset_index()
-        .melt(id_vars=group_column, var_name="category_column", value_name="amount")
     )
-
+    data = data.melt(
+        [year_column, group_column], var_name="category_column", value_name="amount"
+    )
     data["category"] = data["category_column"].map(
         {v: k for k, v in category_columns.items()}
     )
     data["percentage"] = (
-        data["amount"] / data.groupby(group_column)["amount"].transform("sum") * 100
+        data["amount"]
+        / data.groupby([year_column, group_column])["amount"].transform("sum")
+        * 100
+    )
+
+    bars = (
+        alt.Chart(data)
+        .mark_bar(stroke=None)
+        .encode(
+            x=alt.X(f"{year_column}:O", title="Year"),
+            xOffset=alt.XOffset(f"{group_column}:N", title="Mode Group"),
+            y=alt.Y("percentage:Q", title=y_title, scale=alt.Scale(domain=[0, 100])),
+            color=alt.Color(
+                "category:N",
+                title="Expenditure Type",
+                scale=alt.Scale(range=colors) if colors else alt.Scale(),
+            ),
+            tooltip=[
+                alt.Tooltip(f"{year_column}:O", title="Year"),
+                alt.Tooltip(f"{group_column}:N", title="Mode Group"),
+                alt.Tooltip("category:N", title="Type"),
+                alt.Tooltip("percentage:Q", title="Share", format=".1f"),
+                alt.Tooltip("amount:Q", title="Amount", format=",.0f"),
+            ],
+        )
+    )
+
+    labels = data.groupby([year_column, group_column], as_index=False)[
+        "percentage"
+    ].sum()
+    text = (
+        alt.Chart(labels)
+        .mark_text(dy=-8, fontSize=11, fontWeight=500, color="#374151")
+        .encode(
+            x=alt.X(f"{year_column}:O"),
+            xOffset=alt.XOffset(f"{group_column}:N"),
+            y=alt.Y("percentage:Q"),
+            text=alt.Text(f"{group_column}:N"),
+        )
     )
 
     title = (
@@ -329,36 +411,90 @@ def percent_stacked_bar(
         else chart_title
     )
 
-    return (
-        alt.Chart(data)
-        .mark_bar()
-        .encode(
-            x=alt.X(
-                f"{group_column}:N",
-                title=group_column,
-                sort=top_groups,
-                axis=alt.Axis(labelAngle=-25),
-            ),
-            y=alt.Y(
-                "sum(percentage):Q",
-                title=y_title,
-                scale=alt.Scale(domain=[0, 100]),
-                axis=alt.Axis(format=".0f"),
-            ),
-            color=alt.Color(
-                "category:N",
-                title="Category",
-                scale=alt.Scale(range=colors) if colors else alt.Scale(),
-            ),
-            tooltip=[
-                alt.Tooltip(f"{group_column}:N", title=group_column),
-                alt.Tooltip("category:N", title="Category"),
-                alt.Tooltip("percentage:Q", title="Share", format=".1f"),
-                alt.Tooltip("amount:Q", title="Amount", format=",.0f"),
-            ],
-        )
-        .properties(title=title, width=width, height=height)
-    )
+    return (bars + text).properties(width=width, height=height, title=title)
+
+
+# def percent_stacked_bar(
+#     df,
+#     group_column,
+#     category_columns,
+#     year_column=None,
+#     year=None,
+#     rank_column=None,
+#     top_n=10,
+#     chart_title=None,
+#     chart_subtitle=None,
+#     y_title="Percentage",
+#     colors=None,
+#     width=500,
+#     height=300,
+# ):
+#     df_plot = df.copy()
+
+#     if year_column is not None and year is not None:
+#         df_plot = df_plot[df_plot[year_column] == year]
+
+#     if rank_column is not None:
+#         top_groups = (
+#             df_plot.groupby(group_column)[rank_column]
+#             .sum()
+#             .nlargest(top_n)
+#             .index.tolist()
+#         )
+#         df_plot = df_plot[df_plot[group_column].isin(top_groups)]
+#     else:
+#         top_groups = df_plot[group_column].drop_duplicates().tolist()
+
+#     data = (
+#         df_plot.groupby(group_column)[list(category_columns.values())]
+#         .sum()
+#         .reset_index()
+#         .melt(id_vars=group_column, var_name="category_column", value_name="amount")
+#     )
+
+#     data["category"] = data["category_column"].map(
+#         {v: k for k, v in category_columns.items()}
+#     )
+#     data["percentage"] = (
+#         data["amount"] / data.groupby(group_column)["amount"].transform("sum") * 100
+#     )
+
+#     title = (
+#         alt.TitleParams(text=chart_title, subtitle=chart_subtitle)
+#         if chart_subtitle
+#         else chart_title
+#     )
+
+#     return (
+#         alt.Chart(data)
+#         .mark_bar()
+#         .encode(
+#             x=alt.X(
+#                 f"{group_column}:N",
+#                 title=group_column,
+#                 sort=top_groups,
+#                 axis=alt.Axis(labelAngle=-25),
+#             ),
+#             y=alt.Y(
+#                 "sum(percentage):Q",
+#                 title=y_title,
+#                 scale=alt.Scale(domain=[0, 100]),
+#                 axis=alt.Axis(format=".0f"),
+#             ),
+#             color=alt.Color(
+#                 "category:N",
+#                 title="Category",
+#                 scale=alt.Scale(range=colors) if colors else alt.Scale(),
+#             ),
+#             tooltip=[
+#                 alt.Tooltip(f"{group_column}:N", title=group_column),
+#                 alt.Tooltip("category:N", title="Category"),
+#                 alt.Tooltip("percentage:Q", title="Share", format=".1f"),
+#                 alt.Tooltip("amount:Q", title="Amount", format=",.0f"),
+#             ],
+#         )
+#         .properties(title=title, width=width, height=height)
+#     )
 
 
 def ridge_plot(
@@ -449,6 +585,113 @@ def ridge_plot(
         )
         .configure_facet(spacing=0)
         .configure_view(stroke=None)
+    )
+
+
+def simple_box_plot(
+    df,
+    value_column,
+    group_column,
+    year_column=None,
+    year=None,
+    filters=None,
+    value_format=",.0f",
+    sort_by="median",
+    show_n=True,
+    log_scale=False,
+    show_outliers=True,
+    x_title=None,
+    chart_title=None,
+    chart_subtitle=None,
+    colors=None,
+    width=700,
+    height=350,
+):
+    """
+    Simple horizontal box plot: one box per group, sorted by median.
+    Box = middle 50%, line = median, whiskers = typical range, dots = unusual values.
+    """
+    d = df.copy()
+    if year_column and year is not None:
+        d = d[d[year_column] == year]
+    if filters:
+        for col, vals in filters.items():
+            d = d[d[col].isin(vals)] if isinstance(vals, list) else d[d[col] == vals]
+
+    d = d[[group_column, value_column]].dropna()
+    if log_scale:
+        d = d[d[value_column] > 0]
+
+    if show_n:
+        n = d.groupby(group_column)[value_column].size()
+        d["group_label"] = d[group_column].map(lambda g: f"{g} (n={n[g]})")
+    else:
+        d["group_label"] = d[group_column]
+
+    order = (
+        d.groupby("group_label")[value_column]
+        .agg(sort_by)
+        .sort_values(ascending=False)
+        .index.tolist()
+        if sort_by in ("median", "mean")
+        else d["group_label"].drop_duplicates().tolist()
+    )
+
+    return (
+        alt.Chart(d)
+        .mark_boxplot(
+            extent=1.5 if show_outliers else "min-max",
+            size=28,
+            opacity=0.65,
+            median=dict(color="#111827", size=28),
+            rule=dict(color="#6B7280", opacity=0.8),
+            outliers=dict(size=25, color="#6B7280") if show_outliers else False,
+        )
+        .encode(
+            x=alt.X(
+                f"{value_column}:Q",
+                title=x_title or value_column.replace("_", " ").title(),
+                scale=alt.Scale(type="log") if log_scale else alt.Scale(zero=True),
+                axis=alt.Axis(
+                    format=value_format,
+                    grid=True,
+                    gridColor="#E5E7EB",
+                    labelColor="#6B7280",
+                    titleColor="#374151",
+                ),
+            ),
+            y=alt.Y(
+                "group_label:N",
+                sort=order,
+                title=None,
+                axis=alt.Axis(
+                    labelFontSize=12, labelFontWeight=500, ticks=False, domain=False
+                ),
+            ),
+            color=alt.Color(
+                "group_label:N",
+                legend=None,
+                sort=order,
+                scale=alt.Scale(range=colors) if colors else alt.Scale(),
+            ),
+        )
+        .properties(
+            width=width,
+            height=height,
+            title=alt.TitleParams(
+                text=chart_title,
+                subtitle=chart_subtitle,
+                anchor="start",
+                fontSize=16,
+                fontWeight=600,
+                color="#111827",
+                subtitleFontSize=11,
+                subtitleColor="#6B7280",
+            ),
+        )
+        .configure_view(strokeWidth=0)
+        .configure_axis(labelFont="Arial", titleFont="Arial")
+        .configure_title(font="Arial")
     )
 
 
@@ -886,4 +1129,53 @@ def indexed_scissors(
             )
         )
         .configure_view(strokeWidth=0)
+    )
+
+
+def comparison_bar_chart(
+    df,
+    calc1,
+    calc2,
+    title1,
+    title2,
+    x_title1,
+    x_title2,
+    tooltip1,
+    tooltip2,
+    color1="mode",
+    color2="mode_full_name",
+):
+    return (
+        alt.hconcat(
+            alt.Chart(df)
+            .transform_calculate(metric=calc1)
+            .mark_bar()
+            .encode(
+                x=alt.X("metric:Q", title=x_title1),
+                y=alt.Y("mode_full_name:N", sort="-x", title=None),
+                color=alt.Color(f"{color1}:N", legend=None),
+                tooltip=[
+                    "mode_full_name:N",
+                    alt.Tooltip("metric:Q", title=tooltip1, format=".1f"),
+                ],
+            )
+            .properties(width=400, height=300, title=title1),
+            alt.Chart(df)
+            .transform_calculate(metric=calc2)
+            .mark_bar()
+            .encode(
+                x=alt.X("metric:Q", title=x_title2),
+                y=alt.Y("mode_full_name:N", sort="-x", title=None),
+                color=alt.Color(f"{color2}:N", legend=None),
+                tooltip=[
+                    "mode_full_name:N",
+                    alt.Tooltip("metric:Q", title=tooltip2, format=".1f"),
+                ],
+            )
+            .properties(width=400, height=300, title=title2),
+        )
+        .resolve_scale(y="independent")
+        .configure_view(strokeWidth=0)
+        .configure_axis(labelFont="Arial", titleFont="Arial")
+        .configure_title(font="Arial")
     )

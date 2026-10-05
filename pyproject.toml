@@ -31,6 +31,8 @@ dependencies = [
     "vl-convert-python>=1.6.0",
     "calitp-portfolio",
     "snapshot-utils",
+    "pypalettes>=0.2.1",
+    "pywaffle>=1.2.0",
 ]
 
 [tool.uv.workspace]

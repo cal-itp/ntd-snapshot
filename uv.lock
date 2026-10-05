@@ -1629,6 +1629,8 @@ dependencies = [
     { name = "pandas-gbq" },
     { name = "polars" },
     { name = "pyaml" },
+    { name = "pypalettes" },
+    { name = "pywaffle" },
     { name = "shapely" },
     { name = "snapshot-utils" },
     { name = "vegafusion" },
@@ -1664,6 +1666,8 @@ requires-dist = [
     { name = "pandas-gbq", specifier = "==0.35" },
     { name = "polars", specifier = ">=1.40.1" },
     { name = "pyaml", specifier = "==21.10.1" },
+    { name = "pypalettes", specifier = ">=0.2.1" },
+    { name = "pywaffle", specifier = ">=1.2.0" },
     { name = "shapely", specifier = ">=2.0.1,<3.0.0" },
     { name = "snapshot-utils", editable = "_snapshot_utils" },
     { name = "vegafusion", specifier = "==2.0.3" },
@@ -2134,6 +2138,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pypalettes"
+version = "0.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3a/2c/14c7e4b7c61cb26a003e8c8979a24949522270668faf1e3bc6b26e7a8ca8/pypalettes-0.2.1.tar.gz", hash = "sha256:f086b8c3275cf36472216532f4a4c80ebc1a6e639ac5fff9609f94c4123e44c1", size = 14525384, upload-time = "2025-11-09T20:22:51.923Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/91/fb/3380832944eb4552b5873dd8c75095250356edfadf1156bd562da04fc793/pypalettes-0.2.1-py3-none-any.whl", hash = "sha256:5b26fc6e056212e402cf3e6338165ac16e1b19c000f882894d21f2de5bf79af0", size = 367310, upload-time = "2025-11-09T20:22:50.498Z" },
+]
+
+[[package]]
 name = "pyparsing"
 version = "3.3.2"
 source = { registry = "https://pypi.org/simple" }
@@ -2215,6 +2228,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/ff/46/dd499ec9038423421951e4fad73051febaa13d2df82b4064f87af8b8c0c3/pytz-2026.2.tar.gz", hash = "sha256:0e60b47b29f21574376f218fe21abc009894a2321ea16c6754f3cad6eb7cdd6a", size = 320861, upload-time = "2026-05-04T01:35:29.667Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ec/dd/96da98f892250475bdf2328112d7468abdd4acc7b902b6af23f4ed958ea0/pytz-2026.2-py2.py3-none-any.whl", hash = "sha256:04156e608bee23d3792fd45c94ae47fae1036688e75032eea2e3bf0323d1f126", size = 510141, upload-time = "2026-05-04T01:35:27.408Z" },
+]
+
+[[package]]
+name = "pywaffle"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "matplotlib" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/43/92/dad3f24532e056994ba00f0a2c47666d4861d43d92a45381d4109df694a9/pywaffle-1.2.0.tar.gz", hash = "sha256:f2f30de1ad76ec0c2a982ff173812b13b17647d0d5080bb50d8eb59f5897e1f4", size = 63461, upload-time = "2026-09-17T02:03:33.426Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a9/89/c4f10e02b57c73a21a98c07a255beaa8b54d63afd3e4b6c5bc7684bd6ec1/pywaffle-1.2.0-py3-none-any.whl", hash = "sha256:f0e2ed99a62708e9298197e8b389c3906aa431aa961d0ea7d3cbb873fb1bb58c", size = 27914, upload-time = "2026-09-17T02:03:31.826Z" },
 ]
 
 [[package]]
