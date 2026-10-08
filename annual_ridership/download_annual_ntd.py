@@ -1,5 +1,5 @@
 """
-Download new annual and monthly NTD tables.
+Download annual NTD tables.
 """
 
 from snapshot_utils import bq_utils
