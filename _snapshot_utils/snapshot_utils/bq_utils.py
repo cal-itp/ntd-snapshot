@@ -1,209 +1,150 @@
 """
-pandas_gbq utils to download Big Query tables
+Big Query utils to download Big Query tables
 """
 
+from pathlib import Path
 from typing import Literal
 
-import geopandas as gpd
+import gcsfs
 import google.auth
-import pandas as pd
-import pandas_gbq
-from google.cloud import bigquery
+from google.cloud import bigquery, bigquery_storage
 
-from snapshot_utils import geography_utils
+from snapshot_utils import utils
 
 credentials, project = google.auth.default()
+client = bigquery.Client(project=project, credentials=credentials)
+bqstorage_client = bigquery_storage.BigQueryReadClient(credentials=credentials)
 
 
-def basic_sql_query(
-    project_name: str, dataset_name: str, table_name: str, columns: list = None
-) -> str:
+def bigquery_partition_and_job_config(
+    name: Literal[
+        "service_date",
+        "_feed_valid_from",
+        "feed_key",
+        "month_first_day",
+        "ntd_start_year",
+        "ntd_us_states",
+    ],
+    list_of_values: list = [],
+) -> tuple:
     """
-    Set up the basic sql query needed, which is the entire table.
+    Most common partition columns in warehouse.
+    Be able to use a list of values we want and have it set up the
+    Big Query parameterized query correctly - needs the sql query portion + job_config.
     """
-    if isinstance(columns, list):
-        subset_columns_as_string = list_as_string(list(columns))
-        sql_query = f"SELECT {subset_columns_as_string} FROM `{project_name}`.`{dataset_name}`.`{table_name}`"
 
-    else:
-        sql_query = f"SELECT * FROM  `{project_name}`.`{dataset_name}`.`{table_name}`"
-
-    return sql_query
-
-
-def list_as_string(list_of_columns: list) -> str:
-    """
-    Unpack a list of columns as a string, to use in sql select statement.
-    """
-    columns_written_out = ", ".join(list_of_columns)
-    return columns_written_out
-
-
-def add_sql_date_filter(date_col: str, start_date: str, end_date: str) -> str:
-    """
-    Add a where condition to filter by date, coerce the dates so sql_query is read correctly.
-    """
-    if start_date == "" and end_date == "":
-        where_condition = ""
-    else:
-        where_condition = (
-            f"{date_col} >= DATE('{start_date}') AND {date_col} <= DATE('{end_date}')"
+    if name == "service_date":
+        where_partition_condition = "service_date IN UNNEST(@service_date_list)"
+        job_config = bigquery.ArrayQueryParameter(
+            "service_date_list", "DATETIME", list_of_values
+        )
+    elif name == "_feed_valid_from":
+        where_partition_condition = (
+            "DATE(_feed_valid_from) IN UNNEST(@feed_valid_value)"
+        )
+        job_config = bigquery.ArrayQueryParameter(
+            "feed_valid_value", "DATE", list_of_values
+        )
+    elif name == "feed_key":
+        where_partition_condition = "feed_key IN UNNEST(@feed_key_list)"
+        job_config = bigquery.ArrayQueryParameter(
+            "feed_key_list", "STRING", list_of_values
+        )
+    elif name == "month_first_day":
+        where_partition_condition = "month_first_day >= @gtfs_rollup_start_date"
+        job_config = bigquery.ScalarQueryParameter(
+            "gtfs_rollup_start_date", "INT64", list_of_values[0]
+        )
+    elif name == "ntd_start_year":
+        where_partition_condition = "year >= @min_year"
+        job_config = bigquery.ScalarQueryParameter(
+            "min_year", "INT64", list_of_values[0]
+        )
+    elif name == "ntd_us_states":
+        where_partition_condition = "state IN UNNEST(@us_state_list)"
+        job_config = bigquery.ArrayQueryParameter(
+            "us_state_list", "STRING", list_of_values
         )
 
-    return where_condition
-
-
-def exclude_interval_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    BigQuery has interval columns.
-    Drop these, because these will error when saving out parquets.
-    """
-    interval_cols = [c for c in df.columns if "_interval" in c]
-
-    return df.drop(columns=interval_cols)
-
-
-def fix_date_columns(
-    df: pd.DataFrame,
-    # allowed_date_cols: list = ["service_date", "date", "month_first_day"]
-) -> pd.DataFrame:
-    """
-    dbdate shows up when it's BigQuery DATE type.
-    For columns we do use, set these as datetime.
-
-    """
-    date_cols = df.select_dtypes("dbdate").columns.tolist()
-
-    df[date_cols] = df[date_cols].astype("datetime64[ns]")
-
-    return df
-
-
-def timezone_aware_datetime_columns(df, datetime_cols: list):
-    """
-    Timezone-aware columns need to be handled.
-
-    # these are timezone-aware, so should we localize to America/Los_Angeles or keep as UTC?
-    ["location_timestamp", "header_timestamp", "vehicle_timestamp"]
-    """
-    return
+    return where_partition_condition, job_config
 
 
 def download_table(
-    project_name: str = "cal-itp-data-infra",
-    dataset_name: str = "mart_gtfs",
-    table_name: str = "",
-    date_col: Literal["service_date", "month_first_day", None] = "",
-    start_date: str = "",
-    end_date: str = "",
-    columns: list = None,
-    geom_col: str = None,
-    geom_type: Literal["point", "line"] = None,
-) -> Literal[pd.DataFrame, gpd.GeoDataFrame]:
-    """
-    Set up a basic query and use pandas_gbq to import.
-    Coerce datetime column and convert to gdf if needed.
-    """
-    basic_query = basic_sql_query(project_name, dataset_name, table_name)
-    date_condition = add_sql_date_filter(date_col, start_date, end_date)
-
-    if date_col is None:
-        sql_query_statement = basic_query
-    if (date_col is not None) and (date_condition != ""):
-        sql_query_statement = f"{basic_query} WHERE {date_condition}"
-
-    df = pandas_gbq.read_gbq(
-        sql_query_statement,
-        project_id=project_name,
-        dialect="standard",
-        credentials=credentials,
-    )
-
-    print(f"query: {sql_query_statement}")
-
-    if geom_col is not None:
-        df = geography_utils.convert_to_gdf(df, geom_col, geom_type)
-
-    df = df.pipe(fix_date_columns).pipe(exclude_interval_columns)
-
-    return df
-
-
-def bq_faster_download(sql_query: str, **kwargs) -> pd.DataFrame:
-    """
-    This function will take a sql_query string,
-    as well as support parameterized queries.
-    parameterized queries use a job_config kwarg.
-    Use set_bq_query_params() to set this up.
-
-    docs.cloud.google.com/bigquery/docs/parameterized-queries
-    """
-    if "project" in kwargs:
-        project = kwargs.pop("project")
-    if "credentials" in kwargs:
-        credentials = kwargs.pop("credentials")
-
-    client = bigquery.Client(project=project, credentials=credentials)
-
-    query_job = client.query(sql_query, **kwargs)
-
-    df = query_job.result().to_dataframe()
-
-    # df = df.pipe(fix_date_columns).pipe(exclude_interval_columns)
-    df = df.pipe(exclude_interval_columns)
-
-    return df
-
-
-def set_bq_query_params(
-    scalar_query_parameter: dict = None,
-    array_query_parameter: dict = None,
+    sql_query: str = "",
+    filter_dict: dict = {
+        "service_date": [],
+    },
+    additional_sql_condition: str = None,
+    output_path: str = "",
+    geography_column: str = None,
+    client: bigquery.Client = client,
+    filesystem: gcsfs.GCSFileSystem = gcsfs.GCSFileSystem(),
+    bqstorage_client: google.cloud.bigquery_storage_v1.BigQueryReadClient = None,
 ):
     """
-    Example:
-    scalar_query_parameter = {"gender": "M"}
-    array_query_parameter = {"states": ["WA", "WI", "WV", "WY"]}
+    Download a table from the warehouse and export,
+    with the ability to filter by our partitioning and clustering columns
+    more easily.
 
+    Most common partition columns are set up here using query_parameters
+    with the correct data types.
 
-    Use this function to populate the query_parameters argument.
-    By default, it's an empty list.
+    sql_query: Input the table to query. SELECT * FROM some_table or SELECT col1, col2 FROM some_table.
 
-    job_config = bigquery.QueryJobConfig(
-        query_parameters=[
-            bigquery.ScalarQueryParameter("gender", "STRING", "M"),
-            bigquery.ArrayQueryParameter("states", "STRING", ["WA", "WI", "WV", "WY"]),
-        ]
-    )
+    filter_dict: order matters, put the partition columns first, then the clustering columns.
+
+    geography_column: if column is GEOGRAPHY in Big Query, set this to return a geodataframe.
+         Use only for points, not linestrings.
+         Linestrings in warehouse are ARRAYS of points, not GEOGRAPHY.
+
+    client: set to production env, can switch to staging.
+
+    filesystem: need this to export to GCS.
+
+    bqstorage_client: for large dfs that might eat up too much memory,
+        use this to make use of Big Query to GCS in the backend. We want to save in GCS anyway, so this improvement in how BQ tables can be loaded gives us performance improvement, but can add to costs. Use this when we would be scanning the table, but unable to save it out in GCS.
     """
-    query_params = []
+    where_condition_list = []
+    job_config_list = []
 
-    if scalar_query_parameter is not None:
-        for column_name, column_value in scalar_query_parameter.items():
-            if isinstance(column_value, str):
-                one_param = bigquery.ScalarQueryParameter(
-                    column_name, "STRING", column_value
-                )
+    for name, list_of_values in filter_dict.items():
+        where_condition, one_config = bigquery_partition_and_job_config(
+            name, list_of_values
+        )
+        where_condition_list.append(where_condition)
+        job_config_list.append(one_config)
 
-            elif isinstance(column_value, int):
-                one_param = bigquery.ScalarQueryParameter(
-                    column_name, "INT64", column_value
-                )
+    # https://stackoverflow.com/questions/493819/why-is-it-string-joinlist-instead-of-list-joinstring
+    if additional_sql_condition is not None:
+        where_condition_list.append(additional_sql_condition)
 
-            query_params.append(one_param)
+    # For certain tables, we don't need extra filters.
+    # use default arg for filter_dict to prevent querying entire tables
+    if len(filter_dict) == 0:
+        sql_query_expanded = sql_query
+    else:
+        sql_query_expanded = f"""
+            {sql_query} WHERE {" AND ".join(where_condition_list)}
+        """
 
-    if array_query_parameter is not None:
-        for column_name, column_list_of_values in array_query_parameter.items():
-            first_value = column_list_of_values[0]
-            if isinstance(first_value, str):
-                one_param = bigquery.ArrayQueryParameter(
-                    column_name, "STRING", column_list_of_values
-                )
+    job_config = bigquery.QueryJobConfig(query_parameters=job_config_list)
 
-            elif isinstance(first_value, int):
-                one_param = bigquery.ArrayQueryParameter(
-                    column_name, "INT64", column_list_of_values
-                )
+    query_job = client.query(sql_query_expanded, job_config=job_config)
 
-            query_params.append(one_param)
+    # parse the output path
+    filename = Path(output_path).name
 
-    return query_params
+    # this would only support pt_geom, not linestrings, since we store those as arrays of points
+    if geography_column is not None:
+        df = query_job.result().to_geodataframe(
+            bqstorage_client=bqstorage_client, geography_column=geography_column
+        )
+        utils.geoparquet_gcs_export(df, output_path.replace(filename, ""), filename)
+
+    else:
+        df = query_job.result().to_arrow(bqstorage_client=bqstorage_client).to_pandas()
+
+    df.to_parquet(output_path, filesystem=filesystem)
+
+    print(f"exported: {output_path}")
+    return
