@@ -7,6 +7,7 @@ from typing import Literal
 
 import gcsfs
 import google.auth
+import pandas as pd
 from google.cloud import bigquery, bigquery_storage
 
 from snapshot_utils import utils
@@ -15,15 +16,23 @@ credentials, project = google.auth.default()
 client = bigquery.Client(project=project, credentials=credentials)
 bqstorage_client = bigquery_storage.BigQueryReadClient(credentials=credentials)
 
+LOCAL_EXPORT_PATH = "./downloaded_data/data.parquet"
+
 
 def bigquery_partition_and_job_config(
     name: Literal[
         "service_date",
+        "active_date",
         "_feed_valid_from",
+        "base64_url",
+        "schedule_base64_url",
+        "vp_base64_url",
+        "tu_base64_url",
         "feed_key",
         "month_first_day",
         "ntd_start_year",
         "ntd_us_states",
+        "ntd_us_source_states",
     ],
     list_of_values: list = [],
 ) -> tuple:
@@ -37,6 +46,12 @@ def bigquery_partition_and_job_config(
         where_partition_condition = "service_date IN UNNEST(@service_date_list)"
         job_config = bigquery.ArrayQueryParameter(
             "service_date_list", "DATETIME", list_of_values
+        )
+    elif name == "active_date":
+        # only service_alerts uses this
+        where_partition_condition = "active_date IN UNNEST(@active_date_list)"
+        job_config = bigquery.ArrayQueryParameter(
+            "active_date_list", "DATETIME", list_of_values
         )
     elif name == "_feed_valid_from":
         where_partition_condition = (
@@ -60,10 +75,28 @@ def bigquery_partition_and_job_config(
         job_config = bigquery.ScalarQueryParameter(
             "min_year", "INT64", list_of_values[0]
         )
-    elif name == "ntd_us_states":
-        where_partition_condition = "state IN UNNEST(@us_state_list)"
+    elif name in ["ntd_us_states", "ntd_us_source_states"]:
+        if name == "ntd_us_states":
+            col = "state"
+        elif name == "ntd_us_source_states":
+            col = "source_state"
+        where_partition_condition = f"{col} IN UNNEST(@us_state_list)"
         job_config = bigquery.ArrayQueryParameter(
             "us_state_list", "STRING", list_of_values
+        )
+
+    elif name in [
+        "base64_url",
+        "schedule_base64_url",
+        "vp_base64_url",
+        "sa_base64_url",
+        "tu_base64_url",
+    ]:
+        # mostly we partition by base64_url, but we can also cluster by another base64_url
+        # for RT, we would want to make use of partitioning and clustering columns
+        where_partition_condition = f"{name} IN UNNEST(@base64_url_list)"
+        job_config = bigquery.ArrayQueryParameter(
+            "base64_url_list", "STRING", list_of_values
         )
 
     return where_partition_condition, job_config
@@ -75,7 +108,7 @@ def download_table(
         "service_date": [],
     },
     additional_sql_condition: str = None,
-    output_path: str = "",
+    output_path: str = LOCAL_EXPORT_PATH,
     geography_column: str = None,
     client: bigquery.Client = client,
     filesystem: gcsfs.GCSFileSystem = gcsfs.GCSFileSystem(),
@@ -104,6 +137,7 @@ def download_table(
     bqstorage_client: for large dfs that might eat up too much memory,
         use this to make use of Big Query to GCS in the backend. We want to save in GCS anyway, so this improvement in how BQ tables can be loaded gives us performance improvement, but can add to costs. Use this when we would be scanning the table, but unable to save it out in GCS.
     """
+    # Set Big Query job_config and expand the WHERE condition to match job_config
     where_condition_list = []
     job_config_list = []
 
@@ -131,20 +165,94 @@ def download_table(
 
     query_job = client.query(sql_query_expanded, job_config=job_config)
 
-    # parse the output path
+    # parse the output path, if nothing is given, save it locally
     filename = Path(output_path).name
 
     # this would only support pt_geom, not linestrings, since we store those as arrays of points
     if geography_column is not None:
-        df = query_job.result().to_geodataframe(
-            bqstorage_client=bqstorage_client, geography_column=geography_column
+        df = (
+            query_job.result()
+            .to_geodataframe(
+                bqstorage_client=bqstorage_client, geography_column=geography_column
+            )
+            .pipe(fix_date_columns)
+            .rename(columns={geography_column: "geometry"})
         )
+
         utils.geoparquet_gcs_export(df, output_path.replace(filename, ""), filename)
 
     else:
-        df = query_job.result().to_arrow(bqstorage_client=bqstorage_client).to_pandas()
+        df = (
+            query_job.result()
+            .to_arrow(bqstorage_client=bqstorage_client)
+            .to_pandas()
+            .pipe(clean_up_table)
+        )
+
+        df.to_parquet(output_path, filesystem=filesystem)
+
+    print(f"exported: {output_path}")
+    return
+
+
+def download_table_with_job_config(
+    sql_query: str = "",
+    job_config: bigquery.job.query.QueryJobConfig = None,
+    output_path: tuple[str, Path] = LOCAL_EXPORT_PATH,
+    client: bigquery.Client = client,
+    filesystem: gcsfs.GCSFileSystem = gcsfs.GCSFileSystem(),
+    bqstorage_client: google.cloud.bigquery_storage_v1.BigQueryReadClient = None,
+) -> pd.DataFrame:
+    """
+    Download a table from the warehouse and export,
+    but input custom job_configs for parameterized query.
+    """
+    query_job = client.query(sql_query, job_config=job_config)
+
+    df = (
+        query_job.result()
+        .to_arrow(bqstorage_client=bqstorage_client)
+        .to_pandas()
+        .pipe(clean_up_table)
+    )
 
     df.to_parquet(output_path, filesystem=filesystem)
 
     print(f"exported: {output_path}")
     return
+
+
+def fix_date_columns(
+    df: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    dbdate shows up when it's BigQuery DATE type.
+    For columns we do use, set these as datetime.
+    """
+    date_cols = [
+        "service_date",
+        "dt",
+        "active_date",  # mart_gtfs
+        "month_first_day",  # mart_gtfs_rollup
+        "_valid_from_service_date",
+        "_valid_to_service_date",  # mart_transit_database
+    ]
+
+    cols_in_table = [c for c in df.columns if c in date_cols]
+    df[cols_in_table] = df[cols_in_table].astype("datetime64[ns]")
+
+    return df
+
+
+def exclude_interval_columns(df: pd.DataFrame):
+    """
+    Drop INTERVAL type columns, we are used within Big Query, but
+    difficult to coerce and understand otherwise.
+    """
+    interval_cols = [c for c in df.columns if "_interval" in c]
+    df = df.drop(columns=interval_cols)
+    return df
+
+
+def clean_up_table(df: pd.DataFrame):
+    return df.pipe(exclude_interval_columns).pipe(fix_date_columns)
