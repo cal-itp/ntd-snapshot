@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = "==3.11.*"
 
 [manifest]
@@ -806,6 +806,22 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a0/7a/6109aa1803b0c8c93c7064e0e555cff1b12e1692b7b7bc63cdc1619e3722/google_cloud_bigquery-3.42.2.tar.gz", hash = "sha256:08d4b264e5ee4790f719724c76b538f204b7190999328a2f1a6a95eaab74ca39", size = 517250, upload-time = "2026-07-08T17:03:40.675Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ab/ee/3f3ff62d4ce39e6868ef9b98bea0af46f0c9c270092ef64d2bb5897c6e11/google_cloud_bigquery-3.42.2-py3-none-any.whl", hash = "sha256:41658c19e8ed5b83307011b4e55aca3b1f72052545a22788f1d637984615173f", size = 264272, upload-time = "2026-07-08T17:03:09.511Z" },
+]
+
+[[package]]
+name = "google-cloud-bigquery-storage"
+version = "2.39.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-api-core", extra = ["grpc"] },
+    { name = "google-auth" },
+    { name = "grpcio" },
+    { name = "proto-plus" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1b/85/c998751fb4182b84872df7eafcdd2f68e325c791102b65d416975c020020/google_cloud_bigquery_storage-2.39.0.tar.gz", hash = "sha256:d5afd90ad06cf24d9167316cca70ab5b344e880fc13031d7392aa78ee76b8bb6", size = 309852, upload-time = "2026-06-03T15:13:01.874Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/eb/f6/4157466c10181907d07786fb41df5d0a9ff339c1770b9e2a15cfe483e845/google_cloud_bigquery_storage-2.39.0-py3-none-any.whl", hash = "sha256:8c192b6263804f7bdd6f57a17e763ba7f03fa4e53d7ecafca0187e0fd6467d48", size = 305958, upload-time = "2026-06-03T15:12:15.889Z" },
 ]
 
 [[package]]
@@ -1617,6 +1633,7 @@ dependencies = [
     { name = "folium" },
     { name = "gcsfs" },
     { name = "geopandas" },
+    { name = "google-cloud-bigquery-storage" },
     { name = "great-tables" },
     { name = "gt-extras" },
     { name = "ipython" },
@@ -1652,6 +1669,7 @@ requires-dist = [
     { name = "folium", specifier = ">=0.20.0,<0.21.0" },
     { name = "gcsfs", specifier = ">=2026.4.0" },
     { name = "geopandas", specifier = ">=0.14.0,<0.15.0" },
+    { name = "google-cloud-bigquery-storage", specifier = "==2.39.0" },
     { name = "great-tables", specifier = ">=0.22.0" },
     { name = "gt-extras", specifier = ">=0.0.8" },
     { name = "ipython", specifier = "==9.6.0" },
@@ -2527,7 +2545,7 @@ wheels = [
 
 [[package]]
 name = "snapshot-utils"
-version = "0.1"
+version = "0.2"
 source = { editable = "_snapshot_utils" }
 
 [[package]]
