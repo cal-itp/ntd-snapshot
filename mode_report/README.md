@@ -17,7 +17,7 @@ This chart shows trends in `transit ridership`, `operating expenditures`, `capit
 <div style="border-top: 1px solid #999; margin: 2em 0;"></div>
 
 
-### 1.2 1.2 Capital and Operating Expenditures by Mode Group Over Time
+### 1.2 Capital and Operating Expenditures by Mode Group Over Time
 
 This chart shows how `operating expenditures` and `capital expenditures` are distributed across transit mode groups from `2019` to `2024`. Each bar represents the total expenditure for a mode group in a given year, with the stacked segments showing the share attributable to OPEX and CAPEX.
 
@@ -178,17 +178,4 @@ These scatter plots examine the relationship between `operating cost` and `passe
 <div style="border-top: 1px solid #999; margin: 2em 0;"></div>
 
 
-### 4.2 Fleet & Service Delivery
 
-This chart compares `fleet utilization` and `operating speed` across transit modes. Fleet utilization shows how many hours each vehicle is used for revenue service, while operating speed shows how quickly vehicles travel while providing that service.
-
-*How to read the chart*
-
-- **Y-axis:** Shows `transit mode`, with modes ordered by the value of the measure shown in each chart.
-- **X-axis:** `Fleet Utilization` shows `Vehicle Revenue Hours (VRH) per vehicle`. Higher Fleet Utilization values indicate more intensive use of the fleet. `Operating Speed` shows `average operating speed (mph)`, calculated as `Vehicle Revenue Miles (VRM) ÷ Vehicle Revenue Hours (VRH)`. Higher Operating Speed values indicate faster service.
-- **Bars:** Each bar represents the value of the corresponding measure for a transit mode.
-- **Comparison:** The two charts provide complementary views of service delivery: a mode can have high fleet utilization without having high operating speed, or vice versa.
-
-
-
-<div style="border-top: 4px solid #ddd; margin: 2em 0;"></div>
