@@ -1,11 +1,19 @@
 # Chart functions
+import textwrap
+
 import altair as alt
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from pypalettes import load_palette
 from pywaffle import Waffle
 
+# import ipywidgets as widgets
+
 alt.data_transformers.enable("vegafusion")
+NAVY, TEAL, YELLOW, BLUE = "#162933", "#00b2a9", "#ffb81c", "#5493b6"
+GREY, BORDER = "#4b4f54", "#d9d9d6"
+FONT = "Century Gothic, Helvetica, Arial, sans-serif"
 
 
 def composition_by_year(df, cols, chart_title=None, colors=None, width=650, height=140):
@@ -699,19 +707,30 @@ def breakdown_chart(
     df, year, component_columns, group_column, year_column, normalize=True, title=None
 ):
     """
-    Creates a stacked bar chart showing the composition of a total
-    broken into components, by group. Amounts are displayed in millions.
+    Creates a stacked bar chart showing expenditure composition
+    by mode group for a selected year.
+
+    Aggregates expenditure components across all agencies and
+    service types. Amounts are displayed in millions.
+
+    When normalized, each bar represents the percentage
+    contribution of each expenditure component.
+
     """
     plot_df = (
         df[df[year_column] == year]
         .groupby(group_column)[component_columns]
-        .sum()
+        .sum(min_count=1)
         .reset_index()
         .melt(id_vars=group_column, var_name="component", value_name="amount")
     )
+
     plot_df["amount"] /= 1_000_000
     plot_df["component"] = (
-        plot_df["component"].str.replace("_", " ", regex=False).str.title()
+        plot_df["component"]
+        .str.replace("_real", "", regex=False)
+        .str.replace("_", " ", regex=False)
+        .str.title()
     )
 
     y_enc = alt.Y(
@@ -971,28 +990,42 @@ def efficiency_matrix(
     height=300,
 ):
     """
-    Heatmap matrix (mode × metric) with independently normalized metrics.
+    Creates a heatmap comparing efficiency metrics across modes.
 
-    reverse_scale can be:
-        - bool: same direction for all metrics
-        - list of bools: one flag per metric, e.g. [False, True, True]
+    Each metric is normalized independently using z-scores or
+    percentage of maximum values.
+
+    Missing values are preserved and excluded from normalization.
+
+    reverse_scale reverses the interpretation of selected metrics,
+    so lower costs receive a more favorable score.
+
+    Final visualization grain:
+        one row per mode × metric.
     """
     df_plot = df.copy()
+
     if year_column is not None and year is not None:
         df_plot = df_plot[df_plot[year_column] == year]
 
     titles = titles or metrics
-    if len(titles) != len(metrics):
-        raise ValueError("titles must have the same length as metrics.")
 
     if isinstance(reverse_scale, bool):
         reverse_flags = [reverse_scale] * len(metrics)
     else:
         reverse_flags = list(reverse_scale)
-        if len(reverse_flags) != len(metrics):
-            raise ValueError("reverse_scale must have one value per metric.")
 
+    if len(titles) != len(metrics) or len(reverse_flags) != len(metrics):
+        raise ValueError("Titles and reverse_scale must match metrics.")
+
+    # Aggregate by mode
     agg = df_plot.groupby(group_column, as_index=False)[metrics].mean()
+
+    # Ensure numeric metric values
+    for col in metrics:
+        agg[col] = pd.to_numeric(agg[col], errors="coerce")
+
+    # Reshape to long format
     long = agg.melt(
         id_vars=group_column,
         value_vars=metrics,
@@ -1000,62 +1033,84 @@ def efficiency_matrix(
         value_name="raw_value",
     )
 
+    # Normalize each metric independently
     if normalize == "zscore":
-        long["norm_value"] = long.groupby("metric")["raw_value"].transform(
-            lambda x: (x - x.mean()) / x.std()
-        )
-        legend_title = ["Std. deviations", "from mode average"]
-        subtitle = "Each column standardized separately (z-score) — compare within a column, not across columns"
+
+        def zscore(x):
+            valid = x.dropna().astype(float)
+            std = valid.std()
+
+            if len(valid) < 2 or pd.isna(std) or std == 0:
+                return pd.Series(np.nan, index=x.index)
+
+            return (x.astype(float) - valid.mean()) / std
+
+        long["norm_value"] = long.groupby("metric")["raw_value"].transform(zscore)
+
+        legend_title = "Standard deviations"
+
     elif normalize == "percent_of_max":
         long["norm_value"] = long.groupby("metric")["raw_value"].transform(
             lambda x: x / x.max() * 100
         )
-        legend_title = ["% of highest", "value in column"]
-        subtitle = "Each column scaled to % of that column's max — compare within a column, not across columns"
+
+        legend_title = "% of maximum"
+
     else:
         raise ValueError("normalize must be 'zscore' or 'percent_of_max'.")
 
+    # Reverse selected metrics so lower costs score better
     reverse_map = dict(zip(metrics, reverse_flags))
+
     long["norm_value"] *= long["metric"].map(reverse_map).map({True: -1, False: 1})
 
+    # Display labels
     long["metric_label"] = long["metric"].map(dict(zip(metrics, titles)))
 
+    # Heatmap
     return (
         alt.Chart(long)
         .mark_rect(stroke="white", strokeWidth=2)
         .encode(
             x=alt.X(
-                "metric_label:N", title=None, sort=titles, axis=alt.Axis(labelAngle=0)
+                "metric_label:N",
+                title=None,
+                sort=titles,
+                axis=alt.Axis(labelAngle=0),
             ),
-            y=alt.Y(f"{group_column}:N", title=None),
+            y=alt.Y(
+                f"{group_column}:N",
+                title=None,
+                sort=None,
+            ),
             color=alt.Color(
                 "norm_value:Q",
                 title=legend_title,
-                scale=alt.Scale(scheme=color_scheme, domainMid=0),
+                scale=alt.Scale(
+                    scheme=color_scheme,
+                    domainMid=0,
+                ),
             ),
             tooltip=[
                 alt.Tooltip(f"{group_column}:N", title="Mode"),
                 alt.Tooltip("metric_label:N", title="Metric"),
-                alt.Tooltip("raw_value:Q", title="Value", format=",.2f"),
+                alt.Tooltip(
+                    "raw_value:Q",
+                    title="Original Value",
+                    format=",.2f",
+                ),
+                alt.Tooltip(
+                    "norm_value:Q",
+                    title="Standardized Score",
+                    format=".2f",
+                ),
             ],
         )
         .properties(
             width=width,
             height=height,
-            title=alt.TitleParams(
-                text=chart_title,
-                subtitle=subtitle,
-                fontSize=16,
-                fontWeight=600,
-                color="#111827",
-                anchor="start",
-                subtitleFontSize=11,
-                subtitleColor="#6B7280",
-            ),
+            title=chart_title,
         )
-        .configure_view(strokeWidth=0)
-        .configure_axis(labelFont="Arial", titleFont="Arial")
-        .configure_title(font="Arial")
     )
 
 
@@ -1070,28 +1125,53 @@ def indexed_scissors(
     chart_title=None,
     chart_subtitle=None,
 ):
-    """Creates an indexed line chart comparing variables to a base year."""
+    """
+    Creates an indexed line chart comparing variables
+    to a base year.
+
+    Aggregates across agencies before calculating indices.
+
+    Final grain:
+        one row per mode group × year.
+    """
+
     labels = variable_labels or {
         c: c.replace("_", " ").title() for c in variable_columns
     }
-    d = df[[group_column, time_column] + variable_columns].dropna()
-    d = d.groupby([group_column, time_column], as_index=False)[variable_columns].sum()
 
-    base = d[d[time_column] == base_year].rename(
-        columns={c: f"{c}_base" for c in variable_columns}
+    # Aggregate across agencies by mode group and year
+    d = df[[group_column, time_column] + variable_columns].copy()
+
+    d = d.groupby([group_column, time_column], as_index=False)[variable_columns].sum(
+        min_count=1
     )
+
+    # Extract base-year values separately for each group
+    base = d[d[time_column] == base_year].copy()
+
+    base = base.rename(columns={c: f"{c}_base" for c in variable_columns})
+
     d = d.merge(
-        base[[group_column] + [f"{c}_base" for c in variable_columns]], on=group_column
+        base[[group_column] + [f"{c}_base" for c in variable_columns]],
+        on=group_column,
+        how="left",
+        validate="many_to_one",
     )
-    for c in variable_columns:
-        d[f"{c}_index"] = d[c] / d[f"{c}_base"] * 100
 
+    # Calculate indices
+    for c in variable_columns:
+        baseline = d[f"{c}_base"]
+
+        d[f"{c}_index"] = d[c] / baseline.where(baseline > 0) * 100
+
+    # Reshape for visualization
     long = d.melt(
-        [group_column, time_column],
-        [f"{c}_index" for c in variable_columns],
+        id_vars=[group_column, time_column],
+        value_vars=[f"{c}_index" for c in variable_columns],
         var_name="metric",
         value_name="index",
     )
+
     long["metric"] = long["metric"].map(
         {f"{c}_index": labels[c] for c in variable_columns}
     )
@@ -1100,12 +1180,21 @@ def indexed_scissors(
         alt.Chart(long)
         .mark_line(point=True, strokeWidth=2.5)
         .encode(
-            x=alt.X(f"{time_column}:O", title=time_column.replace("_", " ").title()),
-            y=alt.Y("index:Q", title=f"Index ({base_year} = 100)"),
+            x=alt.X(
+                f"{time_column}:O",
+                title=time_column.replace("_", " ").title(),
+            ),
+            y=alt.Y(
+                "index:Q",
+                title=f"Index ({base_year} = 100)",
+            ),
             color=alt.Color(
                 "metric:N",
                 title=None,
-                scale=alt.Scale(domain=list(labels.values()), range=colors)
+                scale=alt.Scale(
+                    domain=list(labels.values()),
+                    range=colors,
+                )
                 if colors
                 else None,
             ),
@@ -1118,7 +1207,11 @@ def indexed_scissors(
             ],
         )
         .properties(width=250, height=180)
-        .facet(f"{group_column}:N", columns=3, title=None)
+        .facet(
+            f"{group_column}:N",
+            columns=3,
+            title=None,
+        )
         .properties(
             title=alt.TitleParams(
                 text=chart_title,
@@ -1179,3 +1272,355 @@ def comparison_bar_chart(
         .configure_axis(labelFont="Arial", titleFont="Arial")
         .configure_title(font="Arial")
     )
+
+
+### AGENCY REPORT CHARTS ###
+
+
+def _val(x):
+    return str(x) if pd.notna(x) else "N/A"
+
+
+def _wrap(text, px, font_size, bold=False):
+    """Wrap text to roughly fit a pixel width (approximate char width)."""
+    char_w = font_size * (0.62 if bold else 0.56)
+    chars = max(8, int(px / char_w))
+    return "\n".join(
+        textwrap.wrap(str(text), width=chars, break_long_words=True)
+    ) or str(text)
+
+
+def _list_values(s):
+    """Unique, cleaned, sorted values (numeric-aware, e.g. district 3.0 -> '3')."""
+    out = set()
+    for v in s.dropna():
+        v = str(v).strip()
+        if not v:
+            continue
+        try:
+            f = float(v)
+            v = str(int(f)) if f.is_integer() else v
+        except ValueError:
+            pass
+        out.add(v)
+    return sorted(
+        out, key=lambda v: (0, int(v), v) if v.isdigit() else (1, 0, v.lower())
+    )
+
+
+def _joined(df, col, singular, plural):
+    vals = _list_values(df[col]) if col in df.columns else []
+    if not vals:
+        return f"{singular}: N/A"
+    return f"{singular if len(vals) == 1 else plural}: {', '.join(vals)}"
+
+
+def history(g, col, label):
+    h = g.dropna(subset=[col]).sort_values("year").copy()
+    if h.empty:
+        return f"{label} history unavailable"
+    h[col] = h[col].astype(str).str.strip()
+    h = h.drop_duplicates("year", keep="last")
+    first, last = h.iloc[0], h.iloc[-1]
+    start, end = int(first["year"]), int(last["year"])
+    values = h[col].str.lower().unique()
+    if len(values) == 1:
+        return f"Always {last[col].lower()} ({start}–{end})"
+    if col == "agency_status":
+        s = h[col].str.lower()
+        active_years = h.loc[s == "active", "year"]
+        if last[col].lower() == "inactive" and not active_years.empty:
+            return f"Sporadically active; currently inactive. Last active: {int(active_years.max())}"
+        if last[col].lower() == "active" and (s == "inactive").any():
+            return "Sporadically inactive; currently active"
+    return f"{label} changed: {first[col]} ({start}) to {last[col]} ({end})"
+
+
+def rtpa_profile_chart(df_opex, rtpa_name, width=1200):
+    data = df_opex[df_opex["rtpa_name"].astype(str) == str(rtpa_name)].copy()
+    if data.empty:
+        raise ValueError(f"No RTPA found: {rtpa_name}")
+    data["year"] = pd.to_numeric(data["year"], errors="coerce")
+    data = data.dropna(subset=["year"])
+    if data.empty:
+        raise ValueError(f"No valid reporting years for {rtpa_name}")
+
+    first_year, latest_year = int(data["year"].min()), int(data["year"].max())
+    total_agencies = data["ntd_id"].nunique(dropna=False)
+    rows = []
+
+    for ntd_id, d in data.groupby(data["ntd_id"].astype(str)):
+        d = d.sort_values("year")
+        r = d.iloc[-1]
+        has_pop = pd.notna(r.get("uza_population"))
+        pop = f"{int(r['uza_population']):,}" if has_pop else "N/A"
+        pop_year = f"Population {int(r['year'])}" if has_pop else "Population year N/A"
+        rows.append(
+            {
+                "ntd_id": str(ntd_id),
+                "label": f"{_val(r.get('source_agency'))} ({ntd_id})",
+                "main_0": _val(r.get("source_agency")),
+                "detail_0": f"NTD {ntd_id} · {_val(r.get('source_city'))}, {_val(r.get('source_state'))}",
+                "main_1": _val(r.get("agency_status")),
+                "detail_1": history(d, "agency_status", "Agency status"),
+                "main_2": _val(r.get("reporter_type")),
+                "detail_2": history(d, "reporter_type", "Reporter type"),
+                "main_3": _val(r.get("primary_uza_name")),
+                "detail_3": f"{pop_year}: {pop}",
+            }
+        )
+
+    agencies = pd.DataFrame(rows).sort_values("label").reset_index(drop=True)
+
+    # --- RTPA-level info (union across all reporting years) ---
+    county_line = _joined(data, "county_name", "County", "Counties")
+    district_line = _joined(
+        data, "caltrans_district", "Caltrans District", "Caltrans Districts"
+    )
+
+    HDR = 100
+    off = HDR - 72
+    W = width
+    one = pd.DataFrame({"_": [0]})
+
+    xs, widths = [0.025, 0.37, 0.55, 0.74], [0.32, 0.18, 0.19, 0.235]
+    headings = ["AGENCY", "AGENCY STATUS", "REPORTER TYPE", "URBANIZED AREA"]
+    colors = [NAVY, TEAL, YELLOW, BLUE]
+
+    TOP = 120 + off  # where the main text starts
+    LINE_MAIN, LINE_DETAIL = 20, 15  # line heights in px
+
+    for j, w in enumerate(widths):
+        px = (w - 0.025) * W
+        agencies[f"main_{j}_w"] = agencies[f"main_{j}"].map(
+            lambda t: _wrap(t, px, 16, bold=True)
+        )
+        agencies[f"detail_{j}_w"] = agencies[f"detail_{j}"].map(
+            lambda t: _wrap(t, px, 12)
+        )
+        # detail starts just below however many lines the main text takes
+        agencies[f"detail_y_{j}"] = (
+            TOP + (agencies[f"main_{j}_w"].str.count("\n") + 1) * LINE_MAIN + 16
+        )
+        agencies[f"bottom_{j}"] = (
+            agencies[f"detail_y_{j}"]
+            + (agencies[f"detail_{j}_w"].str.count("\n") + 1) * LINE_DETAIL
+        )
+
+    # panel height grows to fit the longest agency
+    H = int(
+        max(250 + off, agencies[[f"bottom_{j}" for j in range(4)]].max().max() + 20)
+    )
+
+    def rect(x0, x1, y0, y1, color):
+        return (
+            alt.Chart(one)
+            .mark_rect(color=color)
+            .encode(
+                x=alt.value(x0), x2=alt.value(x1), y=alt.value(y0), y2=alt.value(y1)
+            )
+        )
+
+    def label(text, x, y, **kw):
+        return (
+            alt.Chart(one)
+            .mark_text(font=FONT, baseline="middle", **kw)
+            .encode(x=alt.value(x), y=alt.value(y), text=alt.value(text))
+        )
+
+    static = [
+        rect(0, W, 0, HDR, NAVY),
+        rect(0, W, 0, 3, TEAL),
+        rect(0, W, HDR, H, "#fafbfb"),
+        label(
+            "REGIONAL PROFILE / RTPA",
+            26,
+            16,
+            align="left",
+            color="#b1e4e3",
+            fontSize=11,
+            fontWeight="bold",
+        ),
+        label(
+            rtpa_name,
+            24,
+            40,
+            align="left",
+            color="white",
+            fontSize=22,
+            fontWeight="bold",
+        ),
+        label(
+            county_line, 24, 66, align="left", color="white", fontSize=12, limit=W - 48
+        ),
+        label(
+            district_line,
+            24,
+            84,
+            align="left",
+            color="white",
+            fontSize=12,
+            limit=W - 48,
+        ),
+        label(
+            f"{total_agencies} {'agency' if total_agencies == 1 else 'agencies'} · Reporting years {first_year}–{latest_year}",
+            W - 24,
+            40,
+            align="right",
+            color="white",
+            fontSize=12,
+        ),
+    ]
+
+    for x, w, h, c in zip(xs, widths, headings, colors):
+        static.append(
+            label(
+                h,
+                x * W,
+                91 + off,
+                align="left",
+                color=TEAL,
+                fontSize=12,
+                fontWeight="bold",
+            )
+        )
+        static.append(rect(x * W, min((x + w) * W, W - 12), 105 + off, 108 + off, c))
+
+    agency_param = alt.param(
+        name="agency_sel",
+        value=str(agencies["ntd_id"].iloc[0]),
+        bind=alt.binding_select(
+            options=[str(x) for x in agencies["ntd_id"]],
+            labels=list(agencies["label"]),
+            name="Agency: ",
+        ),
+    )
+
+    dynamic = []
+    for j, (x, w) in enumerate(zip(xs, widths)):
+        dynamic.append(
+            alt.Chart(agencies)
+            .mark_text(
+                font=FONT,
+                align="left",
+                baseline="top",
+                lineBreak="\n",
+                color=NAVY,
+                fontSize=16,
+                fontWeight="bold",
+            )
+            .encode(
+                x=alt.value(x * W),
+                y=alt.value(TOP),
+                text=f"main_{j}_w",
+                tooltip=f"main_{j}",
+            )
+            .transform_filter(alt.datum.ntd_id == agency_param)
+        )
+        dynamic.append(
+            alt.Chart(agencies)
+            .mark_text(
+                font=FONT,
+                align="left",
+                baseline="top",
+                lineBreak="\n",
+                color=GREY,
+                fontSize=12,
+            )
+            .encode(
+                x=alt.value(x * W),
+                y=alt.Y(f"detail_y_{j}:Q", scale=None),
+                text=f"detail_{j}_w",
+                tooltip=f"detail_{j}",
+            )
+            .transform_filter(alt.datum.ntd_id == agency_param)
+        )
+
+    chart = (
+        alt.layer(*static, *dynamic)
+        .properties(width=W, height=H)
+        .add_params(agency_param)
+        .configure_view(stroke=None)
+    )
+
+    return chart, agency_param
+
+
+def rtpa_ntd_value_profile(datasets, rtpa, width=400, height=300):
+    """RTPA dashboard with a shared agency dropdown and responsive chart layout."""
+    group_cols = ["source_agency", "ntd_id", "year"]
+    aggregated, agencies = {}, set()
+
+    for value_col, df in datasets.items():
+        d = df[df["rtpa_name"] == rtpa].copy()
+        if d.empty:
+            raise ValueError(f"No rows found for rtpa_name={rtpa!r} in {value_col}")
+        missing = [c for c in group_cols + [value_col] if c not in d.columns]
+        if missing:
+            raise ValueError(f"Missing columns in {value_col}: {missing}")
+        aggregated[value_col] = d.groupby(group_cols, as_index=False)[value_col].sum()
+        agencies.update(d["source_agency"].dropna().unique())
+
+    if not aggregated:
+        raise ValueError("No datasets provided.")
+
+    agencies = sorted(agencies)
+    agency_sel = alt.selection_point(
+        name="Agency",
+        fields=["source_agency"],
+        bind=alt.binding_select(
+            options=[None] + agencies,
+            labels=["All agencies"] + agencies,
+            name="FOCUS AGENCY  ▼  ",
+        ),
+    )
+
+    charts = []
+    for i, (value_col, agg) in enumerate(aggregated.items()):
+        agg = agg.rename(columns={value_col: "value"})
+        chart = (
+            alt.Chart(agg)
+            .mark_line(point=True, strokeWidth=2.5)
+            .encode(
+                x=alt.X("year:O", title="Year"),
+                y=alt.Y(
+                    "value:Q",
+                    title=value_col.replace("_", " ").title(),
+                    axis=alt.Axis(format="~s"),
+                    scale=alt.Scale(zero=False),
+                ),
+                color=alt.Color(
+                    "source_agency:N",
+                    scale=alt.Scale(domain=agencies, scheme="tableau20"),
+                    legend=None,
+                ),
+                tooltip=[
+                    "source_agency:N",
+                    "year:O",
+                    alt.Tooltip("value:Q", format=","),
+                ],
+            )
+            .transform_filter(agency_sel)
+            .properties(
+                width=width * 2 if i == 0 else width,
+                height=height,
+                title=value_col.replace("_", " ").title(),
+            )
+        )
+        charts.append(chart)
+
+    rows = [charts[0]]
+    rows.extend(
+        alt.hconcat(*charts[i : i + 2], spacing=20) for i in range(1, len(charts), 2)
+    )
+
+    dashboard = (
+        alt.vconcat(*rows, spacing=25)
+        .add_params(agency_sel)
+        .resolve_scale(y="independent")
+        .properties(title="1.1 Ridership, OPEX, CAPEX, VRH and VRM Trend")
+        .configure_view(strokeWidth=0, fill="white")
+        .configure_axis(labelFont="Arial", titleFont="Arial")
+        .configure_title(font="Arial")
+    )
+    return dashboard, agency_sel
