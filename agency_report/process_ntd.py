@@ -517,26 +517,6 @@ def export_to_gcs(
     print(f"exported {path}{filename}.parquet")
 
 
-def load_processed_data_for_mode_report(
-    capex_file="mode_report_capex_data.parquet",
-    opex_file="mode_report_opex_data.parquet",
-    merged_file="mode_report_capex_opex_data.parquet",
-    mode_efficiency_file="mode_efficiency_opex_data.parquet",
-    agency_mode_efficiency_file="agency_mode_efficiency_data.parquet",
-):
-    folder = f"{GCS_FILE_PATH}mode_report/"
-    df_capex = pd.read_parquet(f"{folder}{capex_file}", filesystem=filesystem)
-    df_opex = pd.read_parquet(f"{folder}{opex_file}", filesystem=filesystem)
-    df_merged = pd.read_parquet(f"{folder}{merged_file}", filesystem=filesystem)
-    df_mode_efficiency = pd.read_parquet(
-        f"{folder}{mode_efficiency_file}", filesystem=filesystem
-    )
-    df_agency_mode_efficiency = pd.read_parquet(
-        f"{folder}{agency_mode_efficiency_file}", filesystem=filesystem
-    )
-    return df_capex, df_opex, df_merged, df_mode_efficiency, df_agency_mode_efficiency
-
-
 def load_processed_data_for_agency_report(
     capex_file="agency_report_capex.parquet",
     opex_file="agency_report_opex.parquet",
@@ -561,60 +541,6 @@ def load_processed_data_for_agency_report(
         df_agency_mode_efficiency_opex,
         df_agency_mode_efficiency_capex,
     )
-
-
-# ---------------------------------------------------------------------
-# Mode report
-# ---------------------------------------------------------------------
-
-
-def create_mode_report_data():
-    df_capex = add_mode_group(subset_california(load_capex()))
-    df_opex = add_mode_group(
-        add_service_type_full_name(subset_california(load_service_and_opex()))
-    )
-    df_capex["uza_name"] = df_capex["uza_name"].apply(normalize_uza_name)
-    df_opex["primary_uza_name"] = df_opex["primary_uza_name"].apply(normalize_uza_name)
-
-    cpi_annual = pd.read_csv(f"{GCS_FILE_PATH}cpi_annual.csv")
-    cpi_annual["year"] = pd.to_numeric(cpi_annual["year"])
-    cpi_annual["cpi"] = pd.to_numeric(cpi_annual["cpi"])
-    base_cpi = cpi_annual.loc[cpi_annual["year"] == 2024, "cpi"].iloc[0]
-
-    df_capex = add_real_values(
-        df_capex,
-        [
-            "total_capital_expenditures",
-            "rolling_stock_expenditures",
-            "facilities_expenditures",
-            "other_expenditures",
-        ],
-        cpi_annual,
-        base_cpi,
-    )
-    df_opex = add_real_values(
-        df_opex,
-        [
-            "operating_expenses_total",
-            "operating_expenses_vehicle_operations",
-            "operating_expenses_vehicle_maintenance",
-            "operating_expenses_nonvehicle_maintenance",
-            "operating_expenses_general_administration",
-            "fare_revenue",
-            "opex_per_vrm",
-            "opex_per_vrh",
-            "opex_per_upt",
-        ],
-        cpi_annual,
-        base_cpi,
-    )
-
-    df_capex, df_opex = create_mode_spending_metrics(df_capex, df_opex)
-    df_mode_efficiency = add_mode_group(create_mode_efficiency(df_opex))
-    df_agency_mode_efficiency = add_mode_group(create_agency_mode_efficiency(df_opex))
-    df_merged = add_mode_group(merge_capex_opex(df_capex, df_opex))
-
-    return df_capex, df_opex, df_merged, df_mode_efficiency, df_agency_mode_efficiency
 
 
 # ---------------------------------------------------------------------
@@ -729,29 +655,7 @@ def create_agency_report_data():
 # ---------------------------------------------------------------------
 # Export
 # ---------------------------------------------------------------------
-
 if __name__ == "__main__":
-    df_capex, df_opex, df_merged, df_mode_efficiency, df_agency_mode_efficiency = (
-        create_mode_report_data()
-    )
-    export_to_gcs(df_capex, "mode_report_capex_data", filesystem, folder="mode_report")
-    export_to_gcs(df_opex, "mode_report_opex_data", filesystem, folder="mode_report")
-    export_to_gcs(
-        df_merged, "mode_report_capex_opex_data", filesystem, folder="mode_report"
-    )
-    export_to_gcs(
-        df_mode_efficiency,
-        "mode_efficiency_opex_data",
-        filesystem,
-        folder="mode_report",
-    )
-    export_to_gcs(
-        df_agency_mode_efficiency,
-        "agency_mode_efficiency_data",
-        filesystem,
-        folder="mode_report",
-    )
-
     (
         df_capex,
         df_opex,
@@ -759,6 +663,7 @@ if __name__ == "__main__":
         df_agency_mode_efficiency_opex,
         df_agency_mode_efficiency_capex,
     ) = create_agency_report_data()
+
     export_to_gcs(df_capex, "agency_report_capex", filesystem, folder="agency_report")
     export_to_gcs(df_opex, "agency_report_opex", filesystem, folder="agency_report")
     export_to_gcs(
