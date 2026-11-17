@@ -239,6 +239,10 @@ def fix_date_columns(
     """
     dbdate shows up when it's BigQuery DATE type.
     For columns we do use, set these as datetime.
+
+    For some timezone-aware columns, make timezone-naive.
+    For NTD's Excel exports, datetime must be timezone-naive.
+    https://stackoverflow.com/questions/61802080/excelwriter-valueerror-excel-does-not-support-datetime-with-timezone-when-savin
     """
     date_cols = [
         "service_date",
@@ -250,7 +254,14 @@ def fix_date_columns(
     ]
 
     cols_in_table = [c for c in df.columns if c in date_cols]
+    print(f"columns that are get set as datetime64[ns]: {date_cols}")
+
     df[cols_in_table] = df[cols_in_table].astype("datetime64[ns]")
+
+    utc_cols = df.select_dtypes(include=["datetime64[ns, UTC]"]).columns
+    print(f"columns that are datetime64[ns, UTC]: {utc_cols}")
+    for c in utc_cols:
+        df[c] = pd.to_datetime(df[c]).dt.tz_localize(None)
 
     return df
 
