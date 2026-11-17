@@ -9,7 +9,9 @@ from update_vars import min_year
 if __name__ == "__main__":
     # download the monthly table
     ntd_sql_query = """
-        SELECT * FROM `cal-itp-data-infra.mart_ntd_ridership.fct_complete_monthly_ridership_with_adjustments_and_estimates`
+        SELECT 
+            * EXCEPT(execution_ts, dt)
+        FROM `cal-itp-data-infra.mart_ntd_ridership.fct_complete_monthly_ridership_with_adjustments_and_estimates`
     """
     monthly_filter_dict = {
         "ntd_start_year": [min_year],
