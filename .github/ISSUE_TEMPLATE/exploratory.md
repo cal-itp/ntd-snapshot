@@ -2,7 +2,7 @@
 name: Exploratory
 about: Complete this issue template for the preliminary exploratory work when pursuing a new product idea.
 title: |
-  [exploratory] - [Project Title]
+  [exploratory]: [Project Title]
 assignees: ''
 ---
 Complete the below when receiving a research request, and continue to add to this issue as you receive additional details and produce deliverables. Be sure to also add the appropriate project-level label to this issue.
