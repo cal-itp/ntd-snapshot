@@ -4,14 +4,16 @@ Mode report provides a mode-level overview of transit spending, service delivery
 
 ## 1. Trend and Composition
 ### 1.1 Ridership, OPEX, CAPEX, VRH and VRM Trend
-This chart shows trends in `transit ridership`, `operating expenditures`, `capital expenditures`, and `service levels` across transit modes over time. It provides a high-level view of how passenger demand, transit spending, and service delivery have changed over time.
+This chart shows trends in `transit ridership`, `operating expenditures`, `capital expenditures`, and `service levels` across California transit agencies, disaggregated by mode group (Bus, Rail, and Other). It provides a high-level overview of how passenger demand, transit spending, and service delivery have changed over time.
+
+The measures represent aggregate totals across reporting agencies within each mode group, rather than average agency-level values. Expenditure measures are adjusted for inflation and expressed in 2024 dollars.
 
 *How to read the chart*
 
-- **X-axis:** Shows `Years`.
+- **X-axis:** Reporting `Years`.
 - **Y-axis:** Represents the value of the selected measure: `Unlinked Passenger Trips`, `Operating Expenditures`, `Capital Expenditures`, `Vehicle Revenue Hours`, or `Vehicle Revenue Miles`.
-- **Trend:** Changes over time show whether ridership, spending, or service levels are increasing or declining.
-- **Comparison:** The relative movement of the measures highlights periods when ridership, spending, and service delivery have diverged or moved together.
+- **Trend:** Changes over time indicate whether total ridership, spending, or service delivery within each mode group is increasing or declining.
+- **Comparison:** Differences in the movement of these measures highlight periods when passenger demand, financial investment, and service delivery have diverged or moved together.
 
 
 <div style="border-top: 1px solid #999; margin: 2em 0;"></div>
@@ -58,7 +60,7 @@ The OPEX and CAPEX scorecards compare transit mode groups across three measures:
 
 - **Measures:** Each scorecard shows `Expense Concentration`, `Spending per Capita`, and `Spending Volatility`.
 - **Expense Concentration:** Measured using the `Herfindahl-Hirschman Index (HHI)`. Higher values indicate that spending is concentrated in fewer expenditure components, while lower values indicate a more evenly distributed spending composition.
-- **Spending per Capita:** Shows operating or capital expenditure relative to the population of the service area.
+- **Spending per Capita:** Shows average agency-level operating or capital expenditure per capita across agencies within each mode group.
 - **Spending Volatility:** Shows the `average absolute year-over-year change` in spending. The 2024 scorecards compare spending in `2024` with `2023`; higher values indicate larger changes in spending.
 - **Bars:** Each bar represents a transit mode group. The highlighted bar represents the mode group with the highest value for that metric.
 - **Comparison:** Values should be compared within each metric because the three measures use different units and scales.
@@ -87,7 +89,7 @@ This heatmap compares `operating cost efficiency` across transit modes in 2024 u
 
 ### 2.3 Cost per VRH: Variation Within Each Mode
 
-This box plot shows the distribution of `operating expense per Vehicle Revenue Hour (VRH)` across California agencies within each transit mode in `2024`. Unlike the mode-level averages shown in the previous chart, this view shows how much costs vary between individual agencies operating the same mode. Modes are ordered by their `median cost`, and the number of agencies included in each mode is shown as `(n=...)`.
+This box plot shows the distribution of `operating expense per Vehicle Revenue Hour (VRH)` across California agencies within each transit mode in `2024`. Unlike the mode-level averages shown in the previous chart, this view shows how much costs vary between individual agencies operating the same mode. Multiple service records belonging to the same agency and mode are aggregated before calculating cost per VRH, so each agency contributes one observation per mode. Modes are ordered by their `median cost`, and the number of agencies included in each mode is shown as `(n=...)`.
 
 *How to read the chart*
 
@@ -161,7 +163,7 @@ Using a common base year makes it easier to see whether fare revenue has kept pa
 
 ### 4.1 Operating Efficiency: Cost vs. Service Utilization and Service Intensity
 
-These scatter plots examine the relationship between `operating cost` and `passenger utilization` across transit mode groups. The VRM-based chart relates costs and passenger trips to the amount of service provided in miles, while the VRH-based chart uses hours of service. Both axes are shown on a `log10` scale to make differences across agencies easier to visualize when values vary substantially.
+These scatter plots examine the relationship between `operating cost` and `passenger utilization` across transit mode groups. Each observation represents one agency-mode combination, with multiple service records aggregated before calculating efficiency metrics. The VRM-based chart relates costs and passenger trips to the amount of service provided in miles, while the VRH-based chart uses hours of service. Both axes are shown on a `log10` scale to make differences across agencies easier to visualize when values vary substantially.
 
 *How to read the chart*
 
